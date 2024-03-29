@@ -7,16 +7,16 @@ from sqlalchemy.future import  select
 
 from models.projeto import Projeto
 from models.usuario import Usuario
-from schemas.laboratorio_schema import LaboratorioSchema, LaboratorioSchemaCreate, LaboratorioSchemaUp
+from schemas.laboratorio_schema import ProjetoSchema,ProjetoSchemaCreate,ProjetoSchemaUp
 from core.deps import get_session, get_current_user
 from datetime import datetime
 
 router = APIRouter()
 
 #POST Projeto
-@router.post('/', status_code=status.HTTP_201_CREATED, response_model=LaboratorioSchema)
+@router.post('/', status_code=status.HTTP_201_CREATED, response_model=ProjetoSchema)
 async def post_projeto(
-    projeto: LaboratorioSchemaCreate, 
+    projeto: ProjetoSchemaCreate, 
     usuario_logado: Usuario = Depends(get_current_user), 
     db: AsyncSession = Depends(get_session)
 ):
@@ -34,10 +34,9 @@ async def post_projeto(
                 membrosList.append(usuario)
     
     novo_projeto: Projeto = Projeto(
-        coordenador_id= usuario_logado.id,
-        nome = projeto.nome,
+        autor_id= usuario_logado.id,
+        titulo = projeto.nome,
         descricao= projeto.descricao,
-        email= projeto.email,
         membros = membrosList
     )
 
@@ -47,7 +46,7 @@ async def post_projeto(
     return novo_projeto
 
 #GET Projetos
-@router.get('/', response_model= List[LaboratorioSchema], status_code=status.HTTP_200_OK)
+@router.get('/', response_model= List[ProjetoSchema], status_code=status.HTTP_200_OK)
 async def get_projetos(db: AsyncSession = Depends(get_session)):
     async with db as session:
         query = select(Projeto)
@@ -57,7 +56,7 @@ async def get_projetos(db: AsyncSession = Depends(get_session)):
     return projetos
 
 #GET Projeto
-@router.get('/{projeto_id}', response_model= LaboratorioSchema, status_code=status.HTTP_200_OK)
+@router.get('/{projeto_id}', response_model= ProjetoSchema, status_code=status.HTTP_200_OK)
 async def get_projeto(projeto_id: str, db: AsyncSession = Depends(get_session)):
     async with db as session:
         query = select(Projeto).filter(Projeto.id == projeto_id)
@@ -70,16 +69,16 @@ async def get_projeto(projeto_id: str, db: AsyncSession = Depends(get_session)):
         raise HTTPException(detail="Projeto não encontrado", status_code=status.HTTP_404_NOT_FOUND)
 
 #PUT Projeto
-@router.put('/{projeto_id}', response_model=LaboratorioSchema, status_code=status.HTTP_202_ACCEPTED)
-async def put_projeto(projeto_id: str, projeto: LaboratorioSchemaUp, db: AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+@router.put('/{projeto_id}', response_model=ProjetoSchema, status_code=status.HTTP_202_ACCEPTED)
+async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db: AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     async with db as session:
         query = select(Projeto).filter(Projeto.id == projeto_id)
         result = await session.execute(query)
         projeto_up: Projeto = result.scalars().unique().one_or_none()
     
         if projeto_up:
-            if projeto.nome:
-                projeto_up.nome = projeto.nome
+            if projeto.titulo:
+                projeto_up.titulo = projeto.titulo
             if projeto.membros:
                 # Filtrar usuários pelo ID fornecido no corpo da solicitação
                 membrosList = [usuario for usuario in projeto.membros]
