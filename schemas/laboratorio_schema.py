@@ -22,7 +22,7 @@ class LaboratorioSchemaCreate(BaseModel):
     nome: str
     descricao: str
     sobre: str
-    templates: int
+    template: int
     email: EmailStr
     membros: Optional[List[UUID4]] = None
 
@@ -30,6 +30,6 @@ class LaboratorioSchemaUp(BaseModel):
     nome: Optional[str] = None
     descricao: Optional[str] = None
     sobre: Optional[str] = None
-    templates: Optional[int] = None
+    template: Optional[int] = None
     email: Optional[EmailStr] = None
     membros: Optional[List[UUID4]] = None
