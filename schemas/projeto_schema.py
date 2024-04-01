@@ -7,10 +7,12 @@ class ProjetoSchema(BaseModel):
     id: Optional[UUID4] = None 
     titulo: str
     descricao: str
+    sobre: Optional[str] = None
     autor_id: Optional[UUID4] = None 
     data_inicial: datetime
     data_up: datetime
     membros: Optional[List[UsuarioSchemaBase]] = None
+    templates: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -23,4 +25,6 @@ class ProjetoSchemaCreate(BaseModel):
 class ProjetoSchemaUp(BaseModel):
     titulo: Optional[str] = None
     descricao: Optional[str] = None
+    sobre: Optional[str] = None
+    templates: Optional[int] = None
     membros: Optional[List[UUID4]] = None

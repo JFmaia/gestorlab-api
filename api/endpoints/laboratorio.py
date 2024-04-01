@@ -36,6 +36,8 @@ async def post_laboratorio(
     novo_laboratorio: Laboratorio = Laboratorio(
         coordenador_id= usuario_logado.id,
         nome = laboratorio.nome,
+        sobre= laboratorio.sobre,
+        template= laboratorio.template,
         descricao= laboratorio.descricao,
         email= laboratorio.email,
         membros = membrosList
@@ -82,6 +84,10 @@ async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp,
                 laboratorio_up.nome = laboratorio.nome
             if laboratorio.descricao:
                 laboratorio_up.descricao = laboratorio.descricao
+            if laboratorio.sobre:
+                laboratorio_up.sobre = laboratorio.sobre
+            if laboratorio.template:
+                laboratorio_up.template = laboratorio.template
             if laboratorio.email:
                 laboratorio_up.email= laboratorio.email
             if laboratorio.membros:
