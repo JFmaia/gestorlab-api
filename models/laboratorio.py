@@ -1,14 +1,27 @@
 import uuid
 from datetime import datetime
-from typing import Optional, List
-from sqlmodel import Field, SQLModel, Relationship
+from sqlalchemy import String, Column, ForeignKey, Integer
+from sqlalchemy.orm import relationship
+from core.config import settings
+from sqlalchemy.dialects.postgresql import UUID
+from models.associetions import usuario_laboratorio_association
 
-class Laboratorio(SQLModel, table=True):
-    id: uuid.UUID = Field(primary_key=True, default=uuid.uuid4)
-    nome: str = Field(nullable=False)
-    descricao: Optional[str] = Field(nullable=True)
-    email: Optional[str] = Field(nullable=True)
-    data_inicial: Optional[datetime] = Field(default=datetime.now, nullable=False)
-    data_up: Optional[datetime] = Field(default=datetime.now, nullable=False)
-    usuarios: List["UsuarioLaboratorioAssociation"] = Relationship(back_populates="laboratorios")
-    projetos: List["LaboratorioProjetoAssociation"] = Relationship(back_populates="laboratorios")
+class Laboratorio(settings.DBBaseModel):
+    __tablename__ = 'laboratorios'
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    coordenador_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=False)
+    nome = Column(String(256), nullable=False)
+    sobre = Column(String(5000), nullable=False)
+    descricao = Column(String(256), nullable=True)
+    email = Column(String(256), unique=True, nullable=True)
+    data_inicial = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
+    data_up = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
+    coordenador = relationship("Usuario", back_populates='laboratorios', lazy='joined')
+    membros = relationship(
+        "Usuario",
+        secondary=usuario_laboratorio_association,
+        back_populates="laboratorios",
+        lazy="joined"
+    )
+    template = Column(Integer, nullable=False)

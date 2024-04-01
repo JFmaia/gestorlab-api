@@ -1,27 +1,32 @@
 import uuid
 from datetime import datetime
-from typing import Optional, List
-from sqlmodel import Field, SQLModel, Relationship
+from sqlalchemy import BigInteger, String, Column
+from sqlalchemy.orm import relationship
+from core.config import settings
+from sqlalchemy.dialects.postgresql import UUID
+from models.associetions import usuario_laboratorio_association, usuario_projeto_association
+class Usuario(settings.DBBaseModel):
+    __tablename__ = 'usuario'
 
-class Usuario(SQLModel, table=True):
-    __tablename__: str = 'usuario'
-
-    id: uuid.UUID = Field(
-        default_factory=uuid.uuid4,
-        primary_key=True,
-        index=True,
-        nullable=False
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    primeiro_nome = Column(String(256), nullable=False)
+    segundo_nome = Column(String(256), nullable=False)
+    matricula = Column(BigInteger, nullable=False, unique=True)
+    email = Column(String(256), index=True, nullable=False, unique=True)
+    tel = Column(BigInteger, nullable=True)
+    senha = Column(String(256), nullable=False)
+    laboratorios = relationship(
+        "Laboratorio",
+        secondary=usuario_laboratorio_association,
+        back_populates="membros",
+        lazy="joined"
     )
-    first_name: str = Field(nullable=False)
-    second_name: str = Field(nullable=False)
-    registration: int = Field(nullable=False)
-    email: str = Field(nullable=False)
-    tel: Optional[int] = Field(nullable=True)
-    # Definindo a relação com Laboratorio
-    laboratorios: List["LaboratorioUsuarioAssociation"] = Relationship(back_populates="usuario")
-    # Definindo a relação com Projeto
-    projetos: List["ProjetoUsuarioAssociation"] = Relationship(back_populates="usuario")
-
-    data_inicial: Optional[datetime] = Field(default=datetime.now, nullable=False)
-    data_up: Optional[datetime] = Field(default=datetime.now, nullable=False)
-    tag: int = Field(default=2, nullable=False)
+    projetos = relationship(
+        "Projeto",
+        secondary=usuario_projeto_association,
+        back_populates="membros",
+        lazy="joined"
+    )
+    data_inicial = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
+    data_atualizacao = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
+    tag = Column(BigInteger, default=1, nullable=False)
