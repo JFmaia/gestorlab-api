@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     @property
     def DB_URL(self) -> str:
         return f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
+    
+    @property
+    def DB_URL_TEST (self) -> str:
+        return f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
    
     DBBaseModel: ClassVar = declarative_base()
 
@@ -26,3 +30,19 @@ class Settings(BaseSettings):
 
 
 settings: Settings = Settings()
+
+class SettingsTest(BaseSettings):
+    DATABASE_PORT: int
+    POSTGRES_PASSWORD: str
+    POSTGRES_USER: str
+    POSTGRES_DB: str
+
+    @property
+    def DB_URL_TEST (self) -> str:
+        return f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
+   
+    DBBaseModel: ClassVar = declarative_base()
+
+    class Config:
+        env_file = './.env.test'
+        case_sensitive = True

@@ -10,5 +10,18 @@ services:
       - ./.env
     volumes:
       - postgres-db:/var/lib/postgresql/data
+
+  postgres-test:
+    image: postgres
+    container_name: dbpostgres-test
+    ports:
+      - '5433:5432'  # Porta diferente para evitar conflitos
+    restart: always
+    env_file:
+      - ./.env.test
+    volumes:
+      - postgres-db-test:/var/lib/postgresql/data
+
 volumes:
   postgres-db:
+  postgres-db-test:
