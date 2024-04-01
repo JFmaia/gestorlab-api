@@ -1,6 +1,7 @@
 from typing import Optional, List
 from pydantic import BaseModel, UUID4
 from datetime import datetime
+from .usuario_schema import UsuarioSchemaBase
 
 class ProjetoSchema(BaseModel):
     id: Optional[UUID4] = None 
@@ -9,7 +10,7 @@ class ProjetoSchema(BaseModel):
     autor_id: Optional[UUID4] = None 
     data_inicial: datetime
     data_up: datetime
-    mebros: Optional[List[str]] = None
+    membros: Optional[List[UsuarioSchemaBase]] = None
 
     class Config:
         from_attributes = True
