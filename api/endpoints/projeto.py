@@ -7,7 +7,7 @@ from sqlalchemy.future import  select
 
 from models.projeto import Projeto
 from models.usuario import Usuario
-from schemas.laboratorio_schema import ProjetoSchema,ProjetoSchemaCreate,ProjetoSchemaUp
+from schemas.projeto_schema import ProjetoSchema,ProjetoSchemaCreate,ProjetoSchemaUp
 from core.deps import get_session, get_current_user
 from datetime import datetime
 
@@ -35,15 +35,24 @@ async def post_projeto(
     
     novo_projeto: Projeto = Projeto(
         autor_id= usuario_logado.id,
-        titulo = projeto.nome,
+        titulo = projeto.titulo,
         descricao= projeto.descricao,
         membros = membrosList
     )
 
-    db.add(novo_projeto)
-    await db.commit()
+    async with db as session:
+        query = select(Projeto).filter(Projeto.titulo == novo_projeto.titulo)
+        result = await session.execute(query)
+        veryfProjeto: Projeto = result.scalars().unique().one_or_none()
 
-    return novo_projeto
+    if(veryfProjeto):
+        raise HTTPException(detail="Já existe um projeto com esse nome!!", status_code=status.HTTP_403_FORBIDDEN)
+    else:
+        db.add(novo_projeto)
+        await db.commit()
+        return novo_projeto
+
+    
 
 #GET Projetos
 @router.get('/', response_model= List[ProjetoSchema], status_code=status.HTTP_200_OK)
@@ -90,12 +99,11 @@ async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db: AsyncSessio
                             projeto_up.membros.append(usuario)
             else:
                 # Se a lista de membros enviada estiver vazia, limpe a lista de membros do projeto
-                projeto_up.membros = []
+                projeto_up.membros = projeto.membros
            
             projeto_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             await session.commit()
-            
             return projeto_up
         
         else:
@@ -105,16 +113,17 @@ async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db: AsyncSessio
 @router.delete('/{projeto_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_projeto(projeto_id: str, db: AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     async with db as session:
-        query = select(Projeto).filter(Projeto.id == projeto_id).filter(Projeto.coordenador_id == usuario_logado.id)
+        query = select(Projeto).filter(Projeto.id == projeto_id)
         result = await session.execute(query)
         projeto_del: Projeto = result.scalars().unique().one_or_none()
     
         if projeto_del:
-           
-            await session.delete(projeto_del)
-            await session.commit()
-            
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
+            if(projeto_del.autor_id == usuario_logado.id):
+                await session.delete(projeto_del)
+                await session.commit()
+                return Response(status_code=status.HTTP_204_NO_CONTENT)
+            else:
+                raise HTTPException(detail="Você não tem permissão para excluir este projeto!", status_code=status.HTTP_403_FORBIDDEN)
         
         else:
             raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
