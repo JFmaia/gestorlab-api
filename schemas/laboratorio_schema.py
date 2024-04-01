@@ -7,6 +7,8 @@ class LaboratorioSchema(BaseModel):
     id: Optional[UUID4] = None 
     coordenador_id: Optional[UUID4] = None 
     nome: str
+    sobre: str
+    template: int
     descricao: str
     email: EmailStr
     data_inicial: Optional[datetime] = None 
@@ -19,11 +21,15 @@ class LaboratorioSchema(BaseModel):
 class LaboratorioSchemaCreate(BaseModel):
     nome: str
     descricao: str
+    sobre: str
+    templates: int
     email: EmailStr
     membros: Optional[List[UUID4]] = None
 
 class LaboratorioSchemaUp(BaseModel):
     nome: Optional[str] = None
     descricao: Optional[str] = None
+    sobre: Optional[str] = None
+    templates: Optional[int] = None
     email: Optional[EmailStr] = None
     membros: Optional[List[UUID4]] = None
