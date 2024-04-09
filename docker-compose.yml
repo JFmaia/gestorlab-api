@@ -1,6 +1,6 @@
-version: '3'
+version: '3.8'
 services:
-  postgres:
+  dbpostgres:
     image: postgres
     container_name: dbpostgres
     ports:
@@ -10,18 +10,16 @@ services:
       - ./.env
     volumes:
       - postgres-db:/var/lib/postgresql/data
-
-  postgres-test:
+  dbpostgrestest:
     image: postgres
-    container_name: dbpostgres-test
+    container_name: dbtest
     ports:
-      - '5433:5432'  # Porta diferente para evitar conflitos
+      - '5433:5432'
     restart: always
     env_file:
-      - ./.env.test
+    - ./.env
     volumes:
       - postgres-db-test:/var/lib/postgresql/data
-
 volumes:
   postgres-db:
   postgres-db-test:
