@@ -1,4 +1,4 @@
-from typing import List, Optional, Any
+from typing import List
 
 from fastapi import APIRouter, status, Depends, HTTPException, Response
 from fastapi.security import  OAuth2PasswordRequestForm
@@ -16,7 +16,6 @@ from core.security import gerar_hash_senha
 from core.auth import autenticar, criar_token_acesso
 from sqlalchemy.orm import selectinload
 from datetime import datetime
-from sqlalchemy.orm import load_only
 
 
 router = APIRouter()
@@ -27,7 +26,7 @@ router = APIRouter()
 def get_logado(usuario_logado: Usuario = Depends(get_current_user)):
     return usuario_logado
 
-#POST / Signup
+#POST Signup
 @router.post('/signup', status_code=status.HTTP_201_CREATED, response_model=UsuarioSchemaBase)
 async def post_usuario(usuario: UsuarioSchemaCreate, db: AsyncSession = Depends(get_session)):
     novo_usuario: Usuario = Usuario(
