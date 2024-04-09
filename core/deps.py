@@ -2,26 +2,24 @@ from typing import AsyncGenerator,Optional
 
 from fastapi import Depends, HTTPException, status
 from jose import jwt, JWTError
-
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from pydantic import BaseModel
 
-from core.database import Session
+from core.database import Session, SessionTest
 from core.auth import oauth2_schema
 from core.config import settings
 from models.usuario import Usuario
-
+import os
 class TokenData(BaseModel):
     username: Optional[str] = None
 
-async def get_session() -> AsyncGenerator: # type: ignore
-    session: AsyncSession = Session()
-
-    try:
-        yield session
-    finally:
-        await session.close()
+async def get_session() -> AsyncGenerator:
+    if os.getenv("TESTING"):
+        async with SessionTest() as session:
+            yield session
+    else:
+        async with Session() as session:
+            yield session
 
 
 ## Função que descobre quem é o usuario pelo token
