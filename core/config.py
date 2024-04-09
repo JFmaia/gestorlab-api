@@ -1,20 +1,17 @@
+import os
 from typing import ClassVar
 from pydantic_settings import BaseSettings
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 class Settings(BaseSettings):
-    DATABASE_PORT: int
-    POSTGRES_PASSWORD: str
-    POSTGRES_USER: str
-    POSTGRES_DB: str
-    API_V1_STR: str
+    DATABASE_PORT: int = os.getenv('DATABASE_PORT')
+    POSTGRES_PASSWORD: str = os.getenv('POSTGRES_PASSWORD')
+    POSTGRES_USER: str = os.getenv('POSTGRES_USER')
+    POSTGRES_DB: str = os.getenv('POSTGRES_DB')
+    API_V1_STR: str = os.getenv('API_V1_STR')
 
     @property
     def DB_URL(self) -> str:
-        return f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
-    
-    @property
-    def DB_URL_TEST (self) -> str:
         return f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
    
     DBBaseModel: ClassVar = declarative_base()
@@ -24,25 +21,4 @@ class Settings(BaseSettings):
     ALGORITHM: str = 'HS256'
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
-    class Config:
-        env_file = './.env'
-        case_sensitive = True
-
-
 settings: Settings = Settings()
-
-class SettingsTest(BaseSettings):
-    DATABASE_PORT: int
-    POSTGRES_PASSWORD: str
-    POSTGRES_USER: str
-    POSTGRES_DB: str
-
-    @property
-    def DB_URL_TEST (self) -> str:
-        return f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
-   
-    DBBaseModel: ClassVar = declarative_base()
-
-    class Config:
-        env_file = './.env.test'
-        case_sensitive = True
