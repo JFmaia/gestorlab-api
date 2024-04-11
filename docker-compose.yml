@@ -1,25 +1,13 @@
-version: '3.8'
 services:
-  dbpostgres:
+  dbpostgrestest:
     image: postgres
-    container_name: dbpostgres
+    container_name: dbpostgrestest
     ports:
       - '5432:5432'
     restart: always
     env_file:
       - ./.env
     volumes:
-      - postgres-db:/var/lib/postgresql/data
-  dbpostgrestest:
-    image: postgres
-    container_name: dbtest
-    ports:
-      - '5433:5432'
-    restart: always
-    env_file:
-    - ./.env
-    volumes:
       - postgres-db-test:/var/lib/postgresql/data
 volumes:
-  postgres-db:
   postgres-db-test:
