@@ -6,7 +6,7 @@ class UsuarioSchemaBase(BaseModel):
     id: Optional[UUID4] = None 
     data_inicial: Optional[str] = None
     data_atualizacao: Optional[str] = None
-    primeiro_acesso: Optional[str] = None
+    primeiro_acesso: Optional[bool] = None
     primeiro_nome: str
     segundo_nome: str 
     email: EmailStr
