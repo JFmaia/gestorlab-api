@@ -5,7 +5,7 @@ from jose import jwt, JWTError
 from sqlalchemy.future import select
 from pydantic import BaseModel
 
-from core.database import Session, SessionTest
+from core.database import Session
 from core.auth import oauth2_schema
 from core.config import settings
 from models.usuario import Usuario
@@ -14,12 +14,8 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
 async def get_session() -> AsyncGenerator:
-    if os.getenv("TESTING"):
-        async with SessionTest() as session:
-            yield session
-    else:
-        async with Session() as session:
-            yield session
+    async with Session() as session:
+        yield session
 
 
 ## Função que descobre quem é o usuario pelo token
