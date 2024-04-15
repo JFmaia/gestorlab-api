@@ -32,6 +32,7 @@ async def post_usuario(usuario: UsuarioSchemaCreate, db: AsyncSession = Depends(
     novo_usuario: Usuario = Usuario(
         senha=gerar_hash_senha(usuario.senha),
         primeiro_nome=usuario.primeiro_nome,
+        primeiro_acesso= True,
         segundo_nome=usuario.segundo_nome,
         email=usuario.email,
         matricula=usuario.matricula,
