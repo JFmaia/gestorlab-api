@@ -11,7 +11,7 @@ class Usuario(settings.DBBaseModel):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     primeiro_nome = Column(String(256), nullable=False)
     segundo_nome = Column(String(256), nullable=False)
-    primeiro_acesso = Column(Boolean(True), nullable=False)
+    primeiro_acesso = Column(Boolean(), nullable=False)
     matricula = Column(BigInteger, nullable=False, unique=True)
     email = Column(String(256), index=True, nullable=False, unique=True)
     tel = Column(BigInteger, nullable=True)
