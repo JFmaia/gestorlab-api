@@ -2,7 +2,6 @@ from typing import List
 
 from fastapi import APIRouter, status, Depends, HTTPException, Response
 
-from sqlalchemy.ext.asyncio import  AsyncSession
 from sqlalchemy.future import  select
 
 from models.projeto import Projeto
@@ -18,11 +17,11 @@ router = APIRouter()
 async def post_projeto(
     projeto: ProjetoSchemaCreate, 
     usuario_logado: Usuario = Depends(get_current_user), 
-    db: AsyncSession = Depends(get_session)
+    db= Depends(get_session)
 ):
-    async with db as session:
+    with db as session:
         query = select(Usuario)
-        result = await session.execute(query)
+        result = session.execute(query)
         usuarios: List[Usuario] = result.scalars().unique().all()
 
     membrosList: List[Usuario] = []
@@ -40,36 +39,36 @@ async def post_projeto(
         membros = membrosList
     )
 
-    async with db as session:
+    with db as session:
         query = select(Projeto).filter(Projeto.titulo == novo_projeto.titulo)
-        result = await session.execute(query)
+        result = session.execute(query)
         veryfProjeto: Projeto = result.scalars().unique().one_or_none()
 
     if(veryfProjeto):
         raise HTTPException(detail="Já existe um projeto com esse nome!!", status_code=status.HTTP_403_FORBIDDEN)
     else:
         db.add(novo_projeto)
-        await db.commit()
+        db.commit()
         return novo_projeto
 
     
 
 #GET Projetos
 @router.get('/', response_model= List[ProjetoSchema], status_code=status.HTTP_200_OK)
-async def get_projetos(db: AsyncSession = Depends(get_session)):
-    async with db as session:
+async def get_projetos(db= Depends(get_session)):
+    with db as session:
         query = select(Projeto)
-        result = await session.execute(query)
+        result = session.execute(query)
         projetos: List[Projeto] = result.scalars().unique().all()
 
     return projetos
 
 #GET Projeto
 @router.get('/{projeto_id}', response_model= ProjetoSchema, status_code=status.HTTP_200_OK)
-async def get_projeto(projeto_id: str, db: AsyncSession = Depends(get_session)):
-    async with db as session:
+async def get_projeto(projeto_id: str, db= Depends(get_session)):
+    with db as session:
         query = select(Projeto).filter(Projeto.id == projeto_id)
-        result = await session.execute(query)
+        result = session.execute(query)
         projeto: Projeto = result.scalars().unique().one_or_none()
     
     if projeto:
@@ -79,10 +78,10 @@ async def get_projeto(projeto_id: str, db: AsyncSession = Depends(get_session)):
 
 #PUT Projeto
 @router.put('/{projeto_id}', response_model=ProjetoSchema, status_code=status.HTTP_202_ACCEPTED)
-async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db: AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    async with db as session:
+async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    with db as session:
         query = select(Projeto).filter(Projeto.id == projeto_id)
-        result = await session.execute(query)
+        result = session.execute(query)
         projeto_up: Projeto = result.scalars().unique().one_or_none()
     
         if projeto_up:
@@ -94,7 +93,7 @@ async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db: AsyncSessio
                 # Adicionar usuários à lista de membros se eles não estiverem lá
                 for usuario_id in membrosList:
                     if usuario_id not in [membro.id for membro in projeto_up.membros]:
-                        usuario = await session.get(Usuario, usuario_id)
+                        usuario = session.get(Usuario, usuario_id)
                         if usuario:
                             projeto_up.membros.append(usuario)
             else:
@@ -103,7 +102,7 @@ async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db: AsyncSessio
            
             projeto_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            await session.commit()
+            session.commit()
             return projeto_up
         
         else:
@@ -111,16 +110,16 @@ async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db: AsyncSessio
         
 #DELETE Projeto
 @router.delete('/{projeto_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_projeto(projeto_id: str, db: AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    async with db as session:
+async def delete_projeto(projeto_id: str, db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    with db as session:
         query = select(Projeto).filter(Projeto.id == projeto_id)
-        result = await session.execute(query)
+        result = session.execute(query)
         projeto_del: Projeto = result.scalars().unique().one_or_none()
     
         if projeto_del:
             if(projeto_del.autor_id == usuario_logado.id):
-                await session.delete(projeto_del)
-                await session.commit()
+                session.delete(projeto_del)
+                session.commit()
                 return Response(status_code=status.HTTP_204_NO_CONTENT)
             else:
                 raise HTTPException(detail="Você não tem permissão para excluir este projeto!", status_code=status.HTTP_403_FORBIDDEN)

@@ -2,7 +2,6 @@ from typing import List
 
 from fastapi import APIRouter, status, Depends, HTTPException, Response
 
-from sqlalchemy.ext.asyncio import  AsyncSession
 from sqlalchemy.future import  select
 
 from models.laboratorio import Laboratorio
@@ -18,11 +17,11 @@ router = APIRouter()
 async def post_laboratorio(
     laboratorio: LaboratorioSchemaCreate, 
     usuario_logado: Usuario = Depends(get_current_user), 
-    db: AsyncSession = Depends(get_session)
+    db= Depends(get_session)
 ):
-    async with db as session:
+    with db as session:
         query = select(Usuario)
-        result = await session.execute(query)
+        result = session.execute(query)
         usuarios: List[Usuario] = result.scalars().unique().all()
 
     membrosList: List[Usuario] = []
@@ -44,26 +43,26 @@ async def post_laboratorio(
     )
 
     db.add(novo_laboratorio)
-    await db.commit()
+    db.commit()
 
     return novo_laboratorio
 
 #GET Laboratorios
 @router.get('/', response_model= List[LaboratorioSchema], status_code=status.HTTP_200_OK)
-async def get_laboratorios(db: AsyncSession = Depends(get_session)):
-    async with db as session:
+async def get_laboratorios(db= Depends(get_session)):
+    with db as session:
         query = select(Laboratorio)
-        result = await session.execute(query)
+        result = session.execute(query)
         laboratorios: List[Laboratorio] = result.scalars().unique().all()
 
     return laboratorios
 
 #GET laboratorio
 @router.get('/{laboratorio_id}', response_model= LaboratorioSchema, status_code=status.HTTP_200_OK)
-async def get_laboratorio(laboratorio_id: str, db: AsyncSession = Depends(get_session)):
-    async with db as session:
+async def get_laboratorio(laboratorio_id: str, db= Depends(get_session)):
+    with db as session:
         query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
-        result = await session.execute(query)
+        result = session.execute(query)
         laboratorio: Laboratorio = result.scalars().unique().one_or_none()
     
     if laboratorio:
@@ -73,10 +72,10 @@ async def get_laboratorio(laboratorio_id: str, db: AsyncSession = Depends(get_se
 
 #PUT laboratorio
 @router.put('/{laboratorio_id}', response_model=LaboratorioSchema, status_code=status.HTTP_202_ACCEPTED)
-async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp, db: AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    async with db as session:
+async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp, db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    with db as session:
         query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
-        result = await session.execute(query)
+        result = session.execute(query)
         laboratorio_up: Laboratorio = result.scalars().unique().one_or_none()
     
         if laboratorio_up:
@@ -96,7 +95,7 @@ async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp,
                 # Adicionar usuários à lista de membros se eles não estiverem lá
                 for usuario_id in membrosList:
                     if usuario_id not in [membro.id for membro in laboratorio_up.membros]:
-                        usuario = await session.get(Usuario, usuario_id)
+                        usuario = session.get(Usuario, usuario_id)
                         if usuario:
                             laboratorio_up.membros.append(usuario)
             else:
@@ -105,7 +104,7 @@ async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp,
            
             laboratorio_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            await session.commit()
+            session.commit()
             
             return laboratorio_up
         
@@ -114,16 +113,16 @@ async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp,
         
 #DELETE laboratorio
 @router.delete('/{laboratorio_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_laboratorio(laboratorio_id: str, db: AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    async with db as session:
+async def delete_laboratorio(laboratorio_id: str, db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    with db as session:
         query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id).filter(Laboratorio.coordenador_id == usuario_logado.id)
-        result = await session.execute(query)
+        result = session.execute(query)
         laboratorio_del: Laboratorio = result.scalars().unique().one_or_none()
     
         if laboratorio_del:
            
-            await session.delete(laboratorio_del)
-            await session.commit()
+            session.delete(laboratorio_del)
+            session.commit()
             
             return Response(status_code=status.HTTP_204_NO_CONTENT)
         
