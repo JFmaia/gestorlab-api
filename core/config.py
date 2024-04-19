@@ -19,11 +19,11 @@ class Settings(BaseSettings):
     if(os.getenv('IS_DB') == 'dev'):
         @property
         def DB_URL(self) -> str:
-            return f'postgresql+asyncpg://{self.POSTGRES_USER_TEST}:{self.POSTGRES_PASSWORD_TEST}@localhost:{self.DATABASE_PORT_TEST}/{self.POSTGRES_DB_TEST}'
+            return f'postgresql://{self.POSTGRES_USER_TEST}:{self.POSTGRES_PASSWORD_TEST}@localhost:{self.DATABASE_PORT_TEST}/{self.POSTGRES_DB_TEST}'
     else:
         @property
         def DB_URL(self) -> str:
-            return f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
+            return f'postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
     
     
     DBBaseModel: ClassVar = declarative_base()
