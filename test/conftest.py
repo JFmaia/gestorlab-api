@@ -23,7 +23,7 @@ TestingSessionLocal: sessionmaker = sessionmaker(
     expire_on_commit=False,
     bind=engine
 )
-
+settings.DBBaseModel.metadata.drop_all(bind=engine)
 settings.DBBaseModel.metadata.create_all(bind=engine)
 
 def override_get_db():

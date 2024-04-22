@@ -21,7 +21,7 @@ router = APIRouter()
 
 # GET Logado
 @router.get('/logado', response_model= UsuarioSchemaBase)
-def get_logado(usuario_logado: Usuario = Depends(get_current_user)):
+async def get_logado(usuario_logado: Usuario = Depends(get_current_user)):
     return usuario_logado
 
 #POST Signup
