@@ -95,7 +95,7 @@ async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db=Depends(get_
 
             usuario_up.data_atualizacao = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            await session.commit()
+            session.commit()
 
             return usuario_up
         else:
