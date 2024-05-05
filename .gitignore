@@ -8,6 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .env
+versions/
 test.db
 runenv/
 .Python
