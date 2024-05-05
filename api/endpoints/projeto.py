@@ -126,3 +126,20 @@ async def delete_projeto(projeto_id: str, db= Depends(get_session), usuario_loga
         
         else:
             raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        
+#DELETE laboratorio
+@router.delete('/removeMember/{projeto_id}/{member_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_member_project(projeto_id: str, member_id: str, db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    with db as session:
+        query = select(Projeto).filter(Projeto.id == projeto_id).filter(projeto.autor_id == usuario_logado.id)
+        result = session.execute(query)
+        projeto: Projeto = result.scalars().unique().one_or_none()
+
+        for member in projeto.membros:
+            if member.id == member_id:
+                session.delete(member)
+                session.commit()
+                return Response(detail="Membro removido com sucesso!", status_code=status.HTTP_204_NO_CONTENT)
+        
+        else:
+            raise HTTPException(detail="Membro não encontrado!", status_code=status.HTTP_404_NOT_FOUND)

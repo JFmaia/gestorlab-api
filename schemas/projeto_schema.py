@@ -18,9 +18,7 @@ class ProjetoSchema(BaseModel):
 class ProjetoSchemaCreate(BaseModel):
     titulo: str
     descricao: str
-    membros: Optional[List[UUID4]] = None
 
 class ProjetoSchemaUp(BaseModel):
     titulo: Optional[str] = None
     descricao: Optional[str] = None
-    membros: Optional[List[UUID4]] = None
