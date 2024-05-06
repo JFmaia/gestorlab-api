@@ -126,7 +126,30 @@ async def delete_projeto(projeto_id: str, db= Depends(get_session), usuario_loga
         
         else:
             raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
-        
+
+#POST member in projeto
+@router.post('/addMember/{projeto_id}/{member_email}', status_code=status.HTTP_201_CREATED)
+async def post_member(projeto_id: str, member_email: str, db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)): 
+    with db as session:
+        query = select(Projeto).filter(Projeto.id == projeto_id).filter(Projeto.autor_id == usuario_logado.id)
+        result = session.execute(query)
+        projeto: Projeto = result.scalars().unique().one_or_none()
+
+    if projeto is None:
+        raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+
+    with db as session:
+        query = select(Usuario).filter(Usuario.email == member_email)
+        result = session.execute(query)
+        usuario: Usuario = result.scalars().unique().one_or_none()
+
+    if usuario is None:
+        raise HTTPException(detail="Usuario não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+    else:
+        projeto.membros.append(usuario)
+        db.commit()
+        return usuario
+    
 #DELETE laboratorio
 @router.delete('/removeMember/{projeto_id}/{member_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_member_project(projeto_id: str, member_id: str, db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
