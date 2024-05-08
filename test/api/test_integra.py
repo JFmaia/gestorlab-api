@@ -102,7 +102,6 @@ def test_get_laboratorio(client):
     return id_laboratorio
 
 def test_update_laboratorio(client):
-    id_usuario = test_get_usuarios(client)
     id_laboratorio = test_get_laboratorio(client)
     token = test_login_usuario(client)
     assert token is not None
@@ -115,7 +114,20 @@ def test_update_laboratorio(client):
         "sobre": "Laboratorio limpo, com pessoa legas e interessantes!",
         "template": 2,
         "email": "labens2@gmail.com",
-        "membros": [id_usuario]
     }
     response = client.put(f"/gestorlab/laboratorios/{id_laboratorio}",headers=headers, json=data)
     assert response.status_code == 202
+
+def test_add_member_lab(client):
+    id_laboratorio = test_get_laboratorio(client)
+    member_email = "jfmaia.dev@gmail.com"
+    token = test_login_usuario(client)
+    assert token is not None
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    response = client.post(f"/gestorlab/laboratorios/addMember/{id_laboratorio}/{member_email}", headers=headers)
+    # Adicione instruções de impressão para depuração
+    print("Status Code da resposta:", response.status_code)
+    print("Texto da resposta:", response.text)
+    assert response.status_code == 201

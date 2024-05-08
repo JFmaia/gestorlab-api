@@ -1,7 +1,7 @@
 services:
   dbpostgrestest:
     image: postgres
-    container_name: dbpostgrestest
+    container_name: dbpostgres
     ports:
       - '5432:5432'
     restart: always

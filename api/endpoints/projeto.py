@@ -6,7 +6,7 @@ from sqlalchemy.future import  select
 
 from models.projeto import Projeto
 from models.usuario import Usuario
-from schemas.projeto_schema import ProjetoSchema,ProjetoSchemaCreate,ProjetoSchemaUp
+from schemas.projeto_schema import ProjetoSchema,ProjetoSchemaCreate,ProjetoSchemaUp, ProjetoSchemaAddMember
 from core.deps import get_session, get_current_user
 from datetime import datetime
 
@@ -127,28 +127,34 @@ async def delete_projeto(projeto_id: str, db= Depends(get_session), usuario_loga
         else:
             raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
 
-#POST member in projeto
-@router.post('/addMember/{projeto_id}/{member_email}', status_code=status.HTTP_201_CREATED)
-async def post_member(projeto_id: str, member_email: str, db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)): 
+##POST member in laboratory
+@router.post('/addMember', status_code=status.HTTP_201_CREATED)
+async def post_member(data:ProjetoSchemaAddMember , db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)): 
     with db as session:
-        query = select(Projeto).filter(Projeto.id == projeto_id).filter(Projeto.autor_id == usuario_logado.id)
+        query = select(Projeto).filter(Projeto.id == data.id_projeto).filter(Projeto.coordenador_id == usuario_logado.id)
         result = session.execute(query)
-        projeto: Projeto = result.scalars().unique().one_or_none()
+        projeto:Projeto = result.scalars().unique().one_or_none()
 
     if projeto is None:
         raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
 
     with db as session:
-        query = select(Usuario).filter(Usuario.email == member_email)
+        query = select(Usuario).filter(Usuario.email == data.email_user)
         result = session.execute(query)
         usuario: Usuario = result.scalars().unique().one_or_none()
 
     if usuario is None:
         raise HTTPException(detail="Usuario não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
     else:
-        projeto.membros.append(usuario)
-        db.commit()
-        return usuario
+        if usuario in projeto.membros:
+            raise HTTPException(detail="Este usuário já é membro desse Projeto!", status_code=status.HTTP_404_NOT_FOUND)
+        else:
+            projeto.membros.append(usuario)
+
+            session.add(projeto)
+            session.commit()
+            return HTTPException(detail="Membro adicionado com sucesso com sucesso!", status_code=status.HTTP_201_CREATED)
+
     
 #DELETE laboratorio
 @router.delete('/removeMember/{projeto_id}/{member_id}', status_code=status.HTTP_204_NO_CONTENT)

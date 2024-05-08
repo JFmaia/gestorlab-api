@@ -31,3 +31,7 @@ class LaboratorioSchemaUp(BaseModel):
     sobre: Optional[str] = None
     template: Optional[int] = None
     email: Optional[EmailStr] = None
+
+class LaboratorioSchemaAddMember(BaseModel):
+    id_laboratorio: str
+    email_user: EmailStr

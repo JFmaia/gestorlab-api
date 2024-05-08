@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4,EmailStr
 from datetime import datetime
 from .usuario_schema import UsuarioSchemaBase
 
@@ -22,3 +22,7 @@ class ProjetoSchemaCreate(BaseModel):
 class ProjetoSchemaUp(BaseModel):
     titulo: Optional[str] = None
     descricao: Optional[str] = None
+
+class ProjetoSchemaAddMember(BaseModel):
+    id_projeto: str
+    email_user: EmailStr
