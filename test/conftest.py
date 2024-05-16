@@ -2,6 +2,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from models.usuario import Usuario
+from models.laboratorio import Laboratorio
+from models.projeto import Projeto
 from core.config import settings
 from main import app
 import pytest
@@ -40,3 +43,52 @@ app.dependency_overrides[get_session] = override_get_db
 def client():
     with TestClient(app) as client:
         yield client
+
+
+@pytest.fixture(scope="session")
+def db():
+    db = TestingSessionLocal()
+
+    # Cria um usuário
+    user = Usuario(
+        primeiro_nome="User",
+        segundo_nome="Admin",
+        senha="1234",
+        email="admin@gmail.com",
+        matricula=123131311224,
+        tel=84999215902,
+        tag=1,
+        primeiro_acesso=True
+    )
+
+    db.add(user)
+    db.commit()
+    user_id = user.id
+
+    # Cria um laboratório
+    lab = Laboratorio(
+        nome="Labens3",
+        descricao="Muito bom",
+        sobre="gosto daqui",
+        template=1,
+        email="labens4@gmail.com",
+        coordenador_id=user_id,
+        membros=[]
+    )
+    db.add(lab)
+    db.commit()
+    lab_id = lab.id
+
+    # Cria um projeto associado ao usuário e ao laboratório
+    project = Projeto(
+        autor_id=user_id,
+        titulo='My Projeto',
+        descricao='Tudo bom'
+    )
+    db.add(project)
+    db.commit()
+    project_id = project.id
+
+    yield db, user_id, lab_id, project_id
+
+    db.close()
