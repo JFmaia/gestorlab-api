@@ -17,3 +17,10 @@ usuario_projeto_association = Table(
     Column('usuario_id', UUIDType(binary=False), ForeignKey('usuario.id')),
     Column('projeto_id', UUIDType(binary=False), ForeignKey('projetos.id'))
 )
+
+laboratorio_projeto_association = Table(
+    'laboratorio_projeto',
+    settings.DBBaseModel.metadata,
+    Column('laboratorio_id', UUIDType(binary=False), ForeignKey('laboratorios.id')),
+    Column('projeto_id', UUIDType(binary=False), ForeignKey('projetos.id'))
+)

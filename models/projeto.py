@@ -4,7 +4,7 @@ from sqlalchemy import String, Column, ForeignKey
 from sqlalchemy.orm import relationship
 from core.config import settings
 from sqlalchemy_utils import UUIDType
-from models.associetions import usuario_projeto_association
+from models.associetions import usuario_projeto_association, laboratorio_projeto_association
 class Projeto(settings.DBBaseModel):
     __tablename__ = 'projetos'
 
@@ -18,6 +18,12 @@ class Projeto(settings.DBBaseModel):
     membros = relationship(
         "Usuario",
         secondary=usuario_projeto_association,
+        back_populates="projetos",
+        lazy="joined"
+    )
+    laboratorios = relationship(
+        "Laboratorio",
+        secondary=laboratorio_projeto_association,
         back_populates="projetos",
         lazy="joined"
     )
