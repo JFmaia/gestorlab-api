@@ -18,6 +18,7 @@ class ProjetoSchema(BaseModel):
 class ProjetoSchemaCreate(BaseModel):
     titulo: str
     descricao: str
+    labCreator: str
 
 class ProjetoSchemaUp(BaseModel):
     titulo: Optional[str] = None

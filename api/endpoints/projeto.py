@@ -19,24 +19,11 @@ async def post_projeto(
     usuario_logado: Usuario = Depends(get_current_user), 
     db= Depends(get_session)
 ):
-    with db as session:
-        query = select(Usuario)
-        result = session.execute(query)
-        usuarios: List[Usuario] = result.scalars().unique().all()
-
-    membrosList: List[Usuario] = []
-
-    for id in projeto.membros:
-        # Verificar se o membro está na lista de usuários
-        for usuario in usuarios:
-            if id == usuario.id:
-                membrosList.append(usuario)
-    
     novo_projeto: Projeto = Projeto(
         autor_id= usuario_logado.id,
         titulo = projeto.titulo,
         descricao= projeto.descricao,
-        membros = membrosList
+        lab_creator= projeto.labCreator
     )
 
     with db as session:
@@ -50,8 +37,6 @@ async def post_projeto(
         db.add(novo_projeto)
         db.commit()
         return novo_projeto
-
-    
 
 #GET Projetos
 @router.get('/', response_model= List[ProjetoSchema], status_code=status.HTTP_200_OK)
@@ -87,19 +72,9 @@ async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db= Depends(get
         if projeto_up:
             if projeto.titulo:
                 projeto_up.titulo = projeto.titulo
-            if projeto.membros:
-                # Filtrar usuários pelo ID fornecido no corpo da solicitação
-                membrosList = [usuario for usuario in projeto.membros]
-                # Adicionar usuários à lista de membros se eles não estiverem lá
-                for usuario_id in membrosList:
-                    if usuario_id not in [membro.id for membro in projeto_up.membros]:
-                        usuario = session.get(Usuario, usuario_id)
-                        if usuario:
-                            projeto_up.membros.append(usuario)
-            else:
-                # Se a lista de membros enviada estiver vazia, limpe a lista de membros do projeto
-                projeto_up.membros = projeto.membros
-           
+            if projeto.descricao:
+                projeto_up.descricao = projeto.descricao
+                
             projeto_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             session.commit()
