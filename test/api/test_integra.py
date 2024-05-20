@@ -1,4 +1,5 @@
-from test.utils.utils_usuario import create_user_valido
+from test.utils.utils_usuario import create_user_valido, update_user
+from test.utils.utils_laboratorio import update_laboratorio, create_laboratorio
 
 def test_post_usuario(client):
     body = create_user_valido()
@@ -36,15 +37,7 @@ def test_get_usuario(db,client):
     assert response.status_code == 200
 
 def test_update_usuario(db, client):
-    data = {
-        "primeiro_nome":"User",
-        "segundo_nome":"Admin",
-        "senha":"1234",
-        "email":"admin741@gmail.com",
-        "matricula":123131311224,
-        "tel":84999215902,
-        "tag":1 
-    }
+    data = update_user()
     db_session, user_id, _, _ = db
     response = client.put(f"/gestorlab/usuarios/{user_id}", json=data)
     assert response.status_code == 202
@@ -55,13 +48,7 @@ def test_create_laboratorio(client):
     headers = {
         "Authorization": f"Bearer {token}"
     }
-    data = {
-        "nome": "Labens4",
-        "descricao": "Muito bom",
-        "sobre": "gosto daqui",
-        "template": 1,
-        "email": "labens@gmail.com",
-    }
+    data = create_laboratorio()
     response = client.post('/gestorlab/laboratorios/', headers=headers,json=data)
     print(response.json())
     assert response.status_code == 201
@@ -90,13 +77,7 @@ def test_update_laboratorio(db, client):
     headers = {
         "Authorization": f"Bearer {token}"
     }
-    data = {
-        "nome": "Labens1",
-        "descricao": "Um laboratorio focado para gerencia de dados e manippulação de banco de dados!",
-        "sobre": "Laboratorio limpo, com pessoa legas e interessantes!",
-        "template": 2,
-        "email": "labens2@gmail.com",
-    }
+    data = update_laboratorio()
     response = client.put(f"/gestorlab/laboratorios/{lab_id}",headers=headers, json=data)
     assert response.status_code == 202
 
