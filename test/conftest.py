@@ -82,6 +82,7 @@ def db():
     # Cria um projeto associado ao usuário e ao laboratório
     project = Projeto(
         autor_id=user_id,
+        lab_creator= lab_id,
         titulo='My Projeto',
         descricao='Tudo bom'
     )
