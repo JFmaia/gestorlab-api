@@ -3,6 +3,7 @@ from typing import List
 from fastapi import APIRouter, status, Depends, HTTPException, Response
 
 from sqlalchemy.future import  select
+from sqlalchemy.orm import Session
 
 from models.laboratorio import Laboratorio
 from models.usuario import Usuario
@@ -36,21 +37,19 @@ async def post_laboratorio(
 
 #GET Laboratorios
 @router.get('/', response_model= List[LaboratorioSchema], status_code=status.HTTP_200_OK)
-async def get_laboratorios(db= Depends(get_session)):
-    with db as session:
-        query = select(Laboratorio)
-        result = session.execute(query)
-        laboratorios: List[Laboratorio] = result.scalars().unique().all()
+async def get_laboratorios(db: Session = Depends(get_session)):
+    query = select(Laboratorio)
+    result = db.execute(query)
+    laboratorios: List[Laboratorio] = result.scalars().unique().all()
 
     return laboratorios
 
 #GET laboratorio
 @router.get('/{laboratorio_id}', response_model= LaboratorioSchema, status_code=status.HTTP_200_OK)
-async def get_laboratorio(laboratorio_id: str, db= Depends(get_session)):
-    with db as session:
-        query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
-        result = session.execute(query)
-        laboratorio: Laboratorio = result.scalars().unique().one_or_none()
+async def get_laboratorio(laboratorio_id: str, db: Session = Depends(get_session)):
+    query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
+    result = db.execute(query)
+    laboratorio: Laboratorio = result.scalars().unique().one_or_none()
     
     if laboratorio:
         return laboratorio
@@ -59,96 +58,93 @@ async def get_laboratorio(laboratorio_id: str, db= Depends(get_session)):
 
 #PUT laboratorio
 @router.put('/{laboratorio_id}', response_model=LaboratorioSchema, status_code=status.HTTP_202_ACCEPTED)
-async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp, db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    with db as session:
-        query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
-        result = session.execute(query)
-        laboratorio_up: Laboratorio = result.scalars().unique().one_or_none()
-    
-        if laboratorio_up:
-            if laboratorio.nome:
-                laboratorio_up.nome = laboratorio.nome
-            if laboratorio.descricao:
-                laboratorio_up.descricao = laboratorio.descricao
-            if laboratorio.sobre:
-                laboratorio_up.sobre = laboratorio.sobre
-            if laboratorio.template:
-                laboratorio_up.template = laboratorio.template
-            if laboratorio.email:
-                laboratorio_up.email= laboratorio.email
-           
-            laboratorio_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
-            session.add(laboratorio_up)
-            session.commit()
-            
-            return laboratorio_up
+async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
+    result = db.execute(query)
+    laboratorio_up: Laboratorio = result.scalars().unique().one_or_none()
+
+    if laboratorio_up:
+        if laboratorio.nome:
+            laboratorio_up.nome = laboratorio.nome
+        if laboratorio.descricao:
+            laboratorio_up.descricao = laboratorio.descricao
+        if laboratorio.sobre:
+            laboratorio_up.sobre = laboratorio.sobre
+        if laboratorio.template:
+            laboratorio_up.template = laboratorio.template
+        if laboratorio.email:
+            laboratorio_up.email= laboratorio.email
         
-        else:
-            raise HTTPException(detail="laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        laboratorio_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        db.add(laboratorio_up)
+        db.commit()
+        
+        return laboratorio_up
+    
+    else:
+        raise HTTPException(detail="laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
 #POST member in laboratory
 @router.post('/addMember', status_code=status.HTTP_201_CREATED)
-async def post_member(data:LaboratorioSchemaAddMember , db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)): 
-    with db as session:
-        query = select(Laboratorio).filter(Laboratorio.id == data.id_laboratorio).filter(Laboratorio.coordenador_id == usuario_logado.id)
-        result = session.execute(query)
-        laboratorio: Laboratorio = result.scalars().unique().one_or_none()
+async def post_member(data: LaboratorioSchemaAddMember, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    # Primeiro, obtenha o laboratório na mesma sessão
+    query = select(Laboratorio).filter(Laboratorio.id == data.id_laboratorio).filter(Laboratorio.coordenador_id == usuario_logado.id)
+    result = db.execute(query)
+    laboratorio: Laboratorio = result.scalars().unique().one_or_none()
 
     if laboratorio is None:
         raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
 
-    with db as session:
-        query = select(Usuario).filter(Usuario.email == data.email_user)
-        result = session.execute(query)
-        usuario: Usuario = result.scalars().unique().one_or_none()
+    # Em seguida, obtenha o usuário na mesma sessão
+    query = select(Usuario).filter(Usuario.email == data.email_user)
+    result = db.execute(query)
+    usuario: Usuario = result.scalars().unique().one_or_none()
 
     if usuario is None:
         raise HTTPException(detail="Usuario não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
     else:
         if usuario in laboratorio.membros:
-            raise HTTPException(detail="Este usuário já é membro desse laboratorio!", status_code=status.HTTP_404_NOT_FOUND)
+            raise HTTPException(detail="Este usuário já é membro desse laboratorio!", status_code=status.HTTP_400_BAD_REQUEST)
         else:
             laboratorio.membros.append(usuario)
 
-            session.add(laboratorio)
-            session.commit()
-            return HTTPException(detail="Membro adicionado com sucesso com sucesso!", status_code=status.HTTP_201_CREATED)
+            db.add(laboratorio)
+            db.commit()
+            return {"detail": "Membro adicionado com sucesso com sucesso!"}
 
 
 
 #DELETE laboratorio
 @router.delete('/removeMember/{laboratorio_id}/{member_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_member_laboratory(laboratorio_id: str, member_id: str, db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    with db as session:
-        query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id).filter(Laboratorio.coordenador_id == usuario_logado.id)
-        result = session.execute(query)
-        laboratorio: Laboratorio = result.scalars().unique().one_or_none()
+async def delete_member_laboratory(laboratorio_id: str, member_id: str, db:Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id).filter(Laboratorio.coordenador_id == usuario_logado.id)
+    result = db.execute(query)
+    laboratorio: Laboratorio = result.scalars().unique().one_or_none()
 
-        for member in laboratorio.membros:
-            if member.id == member_id:
-                session.delete(member)
-                session.commit()
-                return HTTPException(detail="Membro removido com sucesso!", status_code=status.HTTP_204_NO_CONTENT)
-        
-        else:
-            raise HTTPException(detail="Membro não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+    for member in laboratorio.membros:
+        if member.id == member_id:
+            db.delete(member)
+            db.commit()
+            return HTTPException(detail="Membro removido com sucesso!", status_code=status.HTTP_204_NO_CONTENT)
+    
+    else:
+        raise HTTPException(detail="Membro não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
 
 #DELETE laboratorio
 @router.delete('/{laboratorio_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_laboratorio(laboratorio_id: str, db= Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    with db as session:
-        query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id).filter(Laboratorio.coordenador_id == usuario_logado.id)
-        result = session.execute(query)
-        laboratorio_del: Laboratorio = result.scalars().unique().one_or_none()
-    
-        if laboratorio_del:
-           
-            session.delete(laboratorio_del)
-            session.commit()
-            
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
+async def delete_laboratorio(laboratorio_id: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id).filter(Laboratorio.coordenador_id == usuario_logado.id)
+    result = db.execute(query)
+    laboratorio_del: Laboratorio = result.scalars().unique().one_or_none()
+
+    if laboratorio_del:
         
-        else:
-            raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        db.delete(laboratorio_del)
+        db.commit()
+        
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    
+    else:
+        raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
