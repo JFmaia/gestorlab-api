@@ -86,10 +86,10 @@ async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp,
         raise HTTPException(detail="laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
 #POST member in laboratory
-@router.post('/addMember', status_code=status.HTTP_201_CREATED)
-async def post_member(data: LaboratorioSchemaAddMember, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+@router.get('/addMember/{laboratorio_id}/{usuario_id}', status_code=status.HTTP_201_CREATED)
+async def post_member(laboratorio_id: str,usuario_id, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     # Primeiro, obtenha o laboratório na mesma sessão
-    query = select(Laboratorio).filter(Laboratorio.id == data.id_laboratorio).filter(Laboratorio.coordenador_id == usuario_logado.id)
+    query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id).filter(Laboratorio.coordenador_id == usuario_logado.id)
     result = db.execute(query)
     laboratorio: Laboratorio = result.scalars().unique().one_or_none()
 
@@ -97,7 +97,7 @@ async def post_member(data: LaboratorioSchemaAddMember, db: Session = Depends(ge
         raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
 
     # Em seguida, obtenha o usuário na mesma sessão
-    query = select(Usuario).filter(Usuario.email == data.email_user)
+    query = select(Usuario).filter(Usuario.id == usuario_id)
     result = db.execute(query)
     usuario: Usuario = result.scalars().unique().one_or_none()
 
