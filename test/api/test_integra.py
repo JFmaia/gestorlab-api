@@ -32,7 +32,7 @@ def test_get_usuarios(client):
     assert len(response.json()) > 0
 
 def test_get_usuario(db,client):
-    db_session, user_id, _, _ = db
+    db_session, user_id, _, _= db
     response = client.get(f"/gestorlab/usuarios/{user_id}")
     assert response.status_code == 200
 
@@ -52,7 +52,6 @@ def test_create_laboratorio(client):
     response = client.post('/gestorlab/laboratorios/', headers=headers,json=data)
     print(response.json())
     assert response.status_code == 201
-
 
 def test_delete_coordenado_of_laboratory(db, client):
     db_session, user_id, _, _ = db
@@ -81,16 +80,15 @@ def test_update_laboratorio(db, client):
     response = client.put(f"/gestorlab/laboratorios/{lab_id}",headers=headers, json=data)
     assert response.status_code == 202
 
-# def test_add_member_lab(db,client):
-#     db_session, lab_id, _, _ = db
-#     member_email = "admin@.com.br"
-#     token = test_login_usuario(client)
-#     assert token is not None
-#     headers = {
-#         "Authorization": f"Bearer {token}"
-#     }
-#     response = client.post(f"/gestorlab/laboratorios/addMember/{lab_id}/{member_email}", headers=headers)
-#     # Adicione instruções de impressão para depuração
-#     print("Status Code da resposta:", response.status_code)
-#     print("Texto da resposta:", response.text)
-#     assert response.status_code == 201
+def test_add_member_lab(db, client):
+    db_session, user_id, lab_id, _ = db
+    token = test_login_usuario(client)
+    assert token is not None
+
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    # Certifique-se de que a URL está correta
+    url = f"/gestorlab/laboratorios/addMember/{lab_id}/{user_id}"
+    response = client.get(url, headers=headers)
+    assert response.status_code == 201
