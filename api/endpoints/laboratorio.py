@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from models.laboratorio import Laboratorio
 from models.usuario import Usuario
-from schemas.laboratorio_schema import LaboratorioSchema, LaboratorioSchemaCreate, LaboratorioSchemaUp,LaboratorioSchemaAddMember
+from schemas.laboratorio_schema import LaboratorioSchema, LaboratorioSchemaCreate, LaboratorioSchemaUp,  LaboratorioSchemaAddMember
 from core.deps import get_session, get_current_user
 from datetime import datetime
 
@@ -86,10 +86,10 @@ async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp,
         raise HTTPException(detail="laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
 #POST member in laboratory
-@router.get('/addMember/{laboratorio_id}/{usuario_id}', status_code=status.HTTP_201_CREATED)
-async def post_member(laboratorio_id: str,usuario_id, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+@router.post('/addMember', status_code=status.HTTP_201_CREATED)
+async def post_member(user: LaboratorioSchemaAddMember , db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     # Primeiro, obtenha o laboratório na mesma sessão
-    query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id).filter(Laboratorio.coordenador_id == usuario_logado.id)
+    query = select(Laboratorio).filter(Laboratorio.id == user.idLaboratorio).filter(Laboratorio.coordenador_id == usuario_logado.id)
     result = db.execute(query)
     laboratorio: Laboratorio = result.scalars().unique().one_or_none()
 
@@ -97,7 +97,7 @@ async def post_member(laboratorio_id: str,usuario_id, db: Session = Depends(get_
         raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
 
     # Em seguida, obtenha o usuário na mesma sessão
-    query = select(Usuario).filter(Usuario.id == usuario_id)
+    query = select(Usuario).filter(Usuario.id == user.idUser)
     result = db.execute(query)
     usuario: Usuario = result.scalars().unique().one_or_none()
 
