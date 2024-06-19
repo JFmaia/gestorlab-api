@@ -1,10 +1,11 @@
 from typing import List
+import uuid
 
 from fastapi import APIRouter, status, Depends, HTTPException, Response
 
 from sqlalchemy.future import  select
 from sqlalchemy.orm import Session
-
+from models.associetions import usuario_laboratorio_association
 from models.laboratorio import Laboratorio
 from models.usuario import Usuario
 from schemas.laboratorio_schema import LaboratorioSchema, LaboratorioSchemaCreate, LaboratorioSchemaUp,  LaboratorioSchemaAddMember
@@ -115,21 +116,38 @@ async def post_member(user: LaboratorioSchemaAddMember , db: Session = Depends(g
 
 
 
-#DELETE laboratorio
 @router.delete('/removeMember/{laboratorio_id}/{member_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_member_laboratory(laboratorio_id: str, member_id: str, db:Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id).filter(Laboratorio.coordenador_id == usuario_logado.id)
-    result = db.execute(query)
-    laboratorio: Laboratorio = result.scalars().unique().one_or_none()
+async def delete_member_laboratory(
+    laboratorio_id: str, 
+    member_id: str, 
+    db: Session = Depends(get_session), 
+    usuario_logado: Usuario = Depends(get_current_user)
+):
+    if usuario_logado:
+        query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
+        result = db.execute(query)
+        laboratorio: Laboratorio = result.scalars().unique().one_or_none()
 
-    for member in laboratorio.membros:
-        if member.id == member_id:
-            db.delete(member)
+        if laboratorio is None:
+            raise HTTPException(detail="Laboratório não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        
+        member_uuid = uuid.UUID(member_id)
+        member_to_remove = None
+        for member in laboratorio.membros:
+            if member.id == member_uuid:
+                member_to_remove = member
+                break
+        
+        if member_to_remove:
+            # Remover membro diretamente da tabela de associação
+            delete_stmt = usuario_laboratorio_association.delete().where(
+                usuario_laboratorio_association.c.laboratorio_id == laboratorio_id,
+                usuario_laboratorio_association.c.usuario_id == member_uuid
+            )
+            db.execute(delete_stmt)
             db.commit()
-            return HTTPException(detail="Membro removido com sucesso!", status_code=status.HTTP_204_NO_CONTENT)
-    
-    else:
-        raise HTTPException(detail="Membro não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        else:
+            raise HTTPException(detail="Membro não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
 
 #DELETE laboratorio
