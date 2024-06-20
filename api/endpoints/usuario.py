@@ -71,63 +71,66 @@ async def get_usuario(usuario_id: str, db= Depends(get_session)):
         
 #PUT Usuario
 @router.put('/{usuario_id}', response_model=UsuarioSchemaBase, status_code=status.HTTP_202_ACCEPTED)
-async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db=Depends(get_session)):
-    with db as session:
-        query= select(Usuario).filter(Usuario.id == usuario_id)
-        result= session.execute(query)
-        usuario_up: UsuarioSchemaBase = result.scalars().unique().one_or_none()
+async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db=Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
 
-        if usuario_up:
-            if usuario.primeiro_nome:
-                usuario_up.primeiro_nome = usuario.primeiro_nome
-            if usuario.segundo_nome:
-                usuario_up.segundo_nome = usuario.segundo_nome
-            if usuario.email:
-                usuario_up.email = usuario.email
-            if usuario.matricula:
-                usuario_up.matricula = usuario.matricula
-            if usuario.senha:
-                usuario_up.senha = gerar_hash_senha(usuario.senha)
-            if usuario.tag:
-                usuario_up.tag = usuario.tag
-            if usuario.tel:
-                usuario_up.tel = usuario.tel
+    if usuario_logado:
+        with db as session:
+            query= select(Usuario).filter(Usuario.id == usuario_id)
+            result= session.execute(query)
+            usuario_up: UsuarioSchemaBase = result.scalars().unique().one_or_none()
 
-            usuario_up.data_atualizacao = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            if usuario_up:
+                if usuario.primeiro_nome:
+                    usuario_up.primeiro_nome = usuario.primeiro_nome
+                if usuario.segundo_nome:
+                    usuario_up.segundo_nome = usuario.segundo_nome
+                if usuario.email:
+                    usuario_up.email = usuario.email
+                if usuario.matricula:
+                    usuario_up.matricula = usuario.matricula
+                if usuario.senha:
+                    usuario_up.senha = gerar_hash_senha(usuario.senha)
+                if usuario.tag:
+                    usuario_up.tag = usuario.tag
+                if usuario.tel:
+                    usuario_up.tel = usuario.tel
 
-            session.commit()
+                usuario_up.data_atualizacao = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            return usuario_up
-        else:
-            raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
+                session.commit()
+
+                return usuario_up
+            else:
+                raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
         
 
 @router.delete('/{usuario_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_usuario(usuario_id: str, db=Depends(get_session)):
-    with db as session:
-        # Verifica se o usuário é coordenador de algum laboratório
-        query_coordenador = select(Laboratorio).filter(Laboratorio.coordenador_id == usuario_id)
-        result_coordenador = session.execute(query_coordenador)
-        laboratorios_coordenador: Laboratorio = result_coordenador.scalars().unique().one_or_none()
+async def delete_usuario(usuario_id: str, db=Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    if usuario_logado:
+        with db as session:
+            # Verifica se o usuário é coordenador de algum laboratório
+            query_coordenador = select(Laboratorio).filter(Laboratorio.coordenador_id == usuario_id)
+            result_coordenador = session.execute(query_coordenador)
+            laboratorios_coordenador: Laboratorio = result_coordenador.scalars().unique().one_or_none()
 
-        if laboratorios_coordenador:
-            raise HTTPException(
-                detail='Para você excluir sua conta, primeiro deve passar os direitos de coordenador para outro membro do laboratório!',
-                status_code=status.HTTP_400_BAD_REQUEST
-            )
+            if laboratorios_coordenador:
+                raise HTTPException(
+                    detail='Para você excluir sua conta, primeiro deve passar os direitos de coordenador para outro membro do laboratório!',
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
 
-        # Se o usuário não for coordenador de nenhum laboratório, exclui o usuário
-        query_usuario = select(Usuario).filter(Usuario.id == usuario_id)
-        result_usuario = session.execute(query_usuario)
-        usuario_del: Usuario = result_usuario.scalars().unique().one_or_none()
+            # Se o usuário não for coordenador de nenhum laboratório, exclui o usuário
+            query_usuario = select(Usuario).filter(Usuario.id == usuario_id)
+            result_usuario = session.execute(query_usuario)
+            usuario_del: Usuario = result_usuario.scalars().unique().one_or_none()
 
-        if usuario_del:
-            session.delete(usuario_del)
-            session.commit()
+            if usuario_del:
+                session.delete(usuario_del)
+                session.commit()
 
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
-        else:
-            raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
+                return Response(status_code=status.HTTP_204_NO_CONTENT)
+            else:
+                raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
 
 #POST Login
 @router.post('/login')
