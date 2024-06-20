@@ -1,9 +1,11 @@
 from typing import List
+import uuid
 from fastapi import APIRouter, status, Depends, HTTPException, Response
 from sqlalchemy.future import  select
 from sqlalchemy.orm import Session
 from models.projeto import Projeto
 from models.usuario import Usuario
+from models.associetions import usuario_projeto_association
 from schemas.projeto_schema import ProjetoSchema,ProjetoSchemaCreate,ProjetoSchemaUp, ProjetoSchemaAddMember
 from core.deps import get_session, get_current_user
 from datetime import datetime
@@ -99,17 +101,17 @@ async def delete_projeto(projeto_id: str, db: Session = Depends(get_session), us
         raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
 
 ##POST member in laboratory
-@router.post('/addMember/{projeto_id}/{usuario_id}', status_code=status.HTTP_201_CREATED)
-async def post_member(projeto_id: str , usuario_id: str , db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)): 
+@router.post('/addMember', status_code=status.HTTP_201_CREATED)
+async def post_member(data: ProjetoSchemaAddMember, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)): 
     if usuario_logado:
-        query = select(Projeto).filter(Projeto.id == projeto_id)
+        query = select(Projeto).filter(Projeto.id == data.idProjeto)
         result = db.execute(query)
         projeto:Projeto = result.scalars().unique().one_or_none()
 
         if projeto is None:
             raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
 
-        query = select(Usuario).filter(Usuario.id == usuario_id)
+        query = select(Usuario).filter(Usuario.email == data.emailUser)
         result = db.execute(query)
         usuario: Usuario = result.scalars().unique().one_or_none()
 
@@ -123,7 +125,7 @@ async def post_member(projeto_id: str , usuario_id: str , db: Session = Depends(
 
                 db.add(projeto)
                 db.commit()
-                return HTTPException(detail="Membro adicionado com sucesso com sucesso!", status_code=status.HTTP_201_CREATED)
+                return HTTPException(detail="Membro adicionado com sucesso!", status_code=status.HTTP_201_CREATED)
 
     
 #DELETE laboratorio
@@ -134,12 +136,24 @@ async def delete_member_project(projeto_id: str, member_id: str, db: Session = D
         result = db.execute(query)
         projeto: Projeto = result.scalars().unique().one_or_none()
 
-        for member in projeto.membros:
-            if member.id == member_id:
-                db.delete(member)
-                db.commit()
-                return Response(detail="Membro removido com sucesso!", status_code=status.HTTP_204_NO_CONTENT)
+        if projeto is None:
+            raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
+        member_uuid = uuid.UUID(member_id)
+        member_to_remove = None
+        for member in projeto.membros:
+            if member.id == member_uuid:
+                member_to_remove = member
+                break
+            
+        if member_to_remove:
+            # Remover membro diretamente da tabela de associação
+            delete_stmt = usuario_projeto_association.delete().where(
+                usuario_projeto_association.c.projeto_id == projeto_id,
+                usuario_projeto_association.c.usuario_id == member_id
+            )
+            db.execute(delete_stmt)
+            db.commit()
         else:
             raise HTTPException(detail="Membro não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         

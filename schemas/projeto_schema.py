@@ -25,5 +25,5 @@ class ProjetoSchemaUp(BaseModel):
     descricao: Optional[str] = None
 
 class ProjetoSchemaAddMember(BaseModel):
-    id_projeto: str
-    email_user: EmailStr
+    idProjeto: str
+    idUsuario: str
