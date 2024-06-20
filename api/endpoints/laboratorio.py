@@ -60,59 +60,61 @@ async def get_laboratorio(laboratorio_id: str, db: Session = Depends(get_session
 #PUT laboratorio
 @router.put('/{laboratorio_id}', response_model=LaboratorioSchema, status_code=status.HTTP_202_ACCEPTED)
 async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
-    result = db.execute(query)
-    laboratorio_up: Laboratorio = result.scalars().unique().one_or_none()
+    if usuario_logado:
+        query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
+        result = db.execute(query)
+        laboratorio_up: Laboratorio = result.scalars().unique().one_or_none()
 
-    if laboratorio_up:
-        if laboratorio.nome:
-            laboratorio_up.nome = laboratorio.nome
-        if laboratorio.descricao:
-            laboratorio_up.descricao = laboratorio.descricao
-        if laboratorio.sobre:
-            laboratorio_up.sobre = laboratorio.sobre
-        if laboratorio.template:
-            laboratorio_up.template = laboratorio.template
-        if laboratorio.email:
-            laboratorio_up.email= laboratorio.email
+        if laboratorio_up:
+            if laboratorio.nome:
+                laboratorio_up.nome = laboratorio.nome
+            if laboratorio.descricao:
+                laboratorio_up.descricao = laboratorio.descricao
+            if laboratorio.sobre:
+                laboratorio_up.sobre = laboratorio.sobre
+            if laboratorio.template:
+                laboratorio_up.template = laboratorio.template
+            if laboratorio.email:
+                laboratorio_up.email= laboratorio.email
+            
+            laboratorio_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            db.add(laboratorio_up)
+            db.commit()
+            
+            return laboratorio_up
         
-        laboratorio_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
-        db.add(laboratorio_up)
-        db.commit()
-        
-        return laboratorio_up
-    
-    else:
-        raise HTTPException(detail="laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        else:
+            raise HTTPException(detail="laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
 #POST member in laboratory
 @router.post('/addMember', status_code=status.HTTP_201_CREATED)
 async def post_member(user: LaboratorioSchemaAddMember , db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     # Primeiro, obtenha o laboratório na mesma sessão
-    query = select(Laboratorio).filter(Laboratorio.id == user.idLaboratorio).filter(Laboratorio.coordenador_id == usuario_logado.id)
-    result = db.execute(query)
-    laboratorio: Laboratorio = result.scalars().unique().one_or_none()
+    if usuario_logado: 
+        query = select(Laboratorio).filter(Laboratorio.id == user.idLaboratorio)
+        result = db.execute(query)
+        laboratorio: Laboratorio = result.scalars().unique().one_or_none()
 
-    if laboratorio is None:
-        raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        if laboratorio is None:
+            raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
 
-    # Em seguida, obtenha o usuário na mesma sessão
-    query = select(Usuario).filter(Usuario.id == user.idUser)
-    result = db.execute(query)
-    usuario: Usuario = result.scalars().unique().one_or_none()
+        # Em seguida, obtenha o usuário na mesma sessão
+        query = select(Usuario).filter(Usuario.id == user.idUser)
+        result = db.execute(query)
+        usuario: Usuario = result.scalars().unique().one_or_none()
 
-    if usuario is None:
-        raise HTTPException(detail="Usuario não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
-    else:
-        if usuario in laboratorio.membros:
-            raise HTTPException(detail="Este usuário já é membro desse laboratorio!", status_code=status.HTTP_400_BAD_REQUEST)
+        if usuario is None:
+            raise HTTPException(detail="Usuario não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         else:
-            laboratorio.membros.append(usuario)
+            if usuario in laboratorio.membros:
+                raise HTTPException(detail="Este usuário já é membro desse laboratorio!", status_code=status.HTTP_400_BAD_REQUEST)
+            else:
+                laboratorio.membros.append(usuario)
 
-            db.add(laboratorio)
-            db.commit()
-            return {"detail": "Membro adicionado com sucesso com sucesso!"}
+                db.add(laboratorio)
+                db.commit()
+                return {"detail": "Membro adicionado com sucesso com sucesso!"}
 
 
 
