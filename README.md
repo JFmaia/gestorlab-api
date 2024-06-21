@@ -10,7 +10,7 @@
 
 #### Passo 3: Depois de está já no seu ambiente virtual rode ```pip install -r requirements.txt```, para instalar no seu ambiente as dependecias do projeto.
 
-#### Passo 4: Faça uma copia do arquivo ***.env.example***, renomei a copia para ***.env*** e por fim preencha os campos vazios que exitem em ***.env***, exemplo: *** POSTGRES_USER='useradmin' ***
+#### Passo 4: Faça uma copia do arquivo ***.env.example***, renomei a copia para ***.env*** e por fim preencha os campos vazios que exitem em ***.env***, exemplo: ***POSTGRES_USER='useradmin'***
 
 #### Passo 5: Crie uma pasta chamada "versions" dentro da pasta ***alembic***, depois disso vai no terminal e digite ```docker compose up```, assim será feito a a criação de migration, implementada no banco e tbm a inicialização do projeto tbm já vai ser feita!
 
