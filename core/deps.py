@@ -5,7 +5,7 @@ from jose import jwt, JWTError
 from sqlalchemy.future import select
 from pydantic import BaseModel
 
-from core.database import Session, SessionTest
+from core.database import Session
 from core.auth import oauth2_schema
 from core.config import settings
 from models.usuario import Usuario
@@ -13,13 +13,12 @@ import os
 class TokenData(BaseModel):
     username: Optional[str] = None
 
-async def get_session() -> AsyncGenerator:
-    if os.getenv("TESTING"):
-        async with SessionTest() as session:
-            yield session
-    else:
-        async with Session() as session:
-            yield session
+def get_session():
+    try:
+        db = Session()
+        yield db
+    finally:
+        db.close()
 
 
 ## Função que descobre quem é o usuario pelo token
@@ -46,9 +45,9 @@ async def get_current_user(db: Session = Depends(get_session), token: str = Depe
     except JWTError:
         raise credential_exception
     
-    async with db as session:
+    with db as session:
         query = select(Usuario).filter(Usuario.id == token_data.username)
-        result = await session.execute(query)
+        result = session.execute(query)
         usuario: Usuario = result.scalars().unique().one_or_none()
         if usuario is None:
             raise credential_exception

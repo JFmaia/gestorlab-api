@@ -2,6 +2,7 @@ from typing import Optional, List
 from pydantic import BaseModel, EmailStr, UUID4
 from datetime import datetime
 from .usuario_schema import UsuarioSchemaBase
+from .projeto_schema import ProjetoSchema
 
 class LaboratorioSchema(BaseModel):
     id: Optional[UUID4] = None 
@@ -14,6 +15,7 @@ class LaboratorioSchema(BaseModel):
     data_inicial: Optional[datetime] = None 
     data_up: Optional[datetime] = None
     membros: Optional[List[UsuarioSchemaBase]] = None
+    projetos: Optional[List[ProjetoSchema]] = None
 
     class Config:
         from_attributes = True
@@ -24,7 +26,6 @@ class LaboratorioSchemaCreate(BaseModel):
     sobre: str
     template: int
     email: EmailStr
-    membros: Optional[List[UUID4]] = None
 
 class LaboratorioSchemaUp(BaseModel):
     nome: Optional[str] = None
@@ -32,4 +33,10 @@ class LaboratorioSchemaUp(BaseModel):
     sobre: Optional[str] = None
     template: Optional[int] = None
     email: Optional[EmailStr] = None
-    membros: Optional[List[UUID4]] = None
+
+class LaboratorioSchemaAddMember(BaseModel):
+    idLaboratorio: str
+    idUser: str
+
+class LaboratorioSchemaAddProjeto(BaseModel):
+    id_projeto: str

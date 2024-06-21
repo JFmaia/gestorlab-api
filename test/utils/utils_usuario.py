@@ -8,3 +8,14 @@ def create_user_valido():
         "tel": 84999314153,
         "tag": 1
     }
+
+def update_user(): 
+    return {
+        "primeiro_nome": "José Flávio",
+        "segundo_nome": "Maia",
+        "email": "jfmaia.dev@gmail.com",
+        "matricula": 31234567891,
+        "tel":84999314153,
+        "tag":1,
+        "senha":"password741@"
+    }

@@ -1,16 +1,17 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import BigInteger, String, Column
+from sqlalchemy import BigInteger, String, Column, Boolean
 from sqlalchemy.orm import relationship
 from core.config import settings
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy_utils import UUIDType
 from models.associetions import usuario_laboratorio_association, usuario_projeto_association
 class Usuario(settings.DBBaseModel):
     __tablename__ = 'usuario'
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
     primeiro_nome = Column(String(256), nullable=False)
     segundo_nome = Column(String(256), nullable=False)
+    primeiro_acesso = Column(Boolean(), nullable=False)
     matricula = Column(BigInteger, nullable=False, unique=True)
     email = Column(String(256), index=True, nullable=False, unique=True)
     tel = Column(BigInteger, nullable=True)

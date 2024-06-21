@@ -1,13 +1,12 @@
 from typing import List
-
+import uuid
 from fastapi import APIRouter, status, Depends, HTTPException, Response
-
-from sqlalchemy.ext.asyncio import  AsyncSession
 from sqlalchemy.future import  select
-
+from sqlalchemy.orm import Session
 from models.projeto import Projeto
 from models.usuario import Usuario
-from schemas.projeto_schema import ProjetoSchema,ProjetoSchemaCreate,ProjetoSchemaUp
+from models.associetions import usuario_projeto_association
+from schemas.projeto_schema import ProjetoSchema, ProjetoSchemaCreate, ProjetoSchemaUp, ProjetoSchemaAddMember
 from core.deps import get_session, get_current_user
 from datetime import datetime
 
@@ -18,59 +17,43 @@ router = APIRouter()
 async def post_projeto(
     projeto: ProjetoSchemaCreate, 
     usuario_logado: Usuario = Depends(get_current_user), 
-    db: AsyncSession = Depends(get_session)
+    db: Session = Depends(get_session)
 ):
-    async with db as session:
-        query = select(Usuario)
-        result = await session.execute(query)
-        usuarios: List[Usuario] = result.scalars().unique().all()
-
-    membrosList: List[Usuario] = []
-
-    for id in projeto.membros:
-        # Verificar se o membro está na lista de usuários
-        for usuario in usuarios:
-            if id == usuario.id:
-                membrosList.append(usuario)
-    
     novo_projeto: Projeto = Projeto(
         autor_id= usuario_logado.id,
         titulo = projeto.titulo,
         descricao= projeto.descricao,
-        membros = membrosList
+        lab_creator= projeto.labCreator
     )
 
-    async with db as session:
-        query = select(Projeto).filter(Projeto.titulo == novo_projeto.titulo)
-        result = await session.execute(query)
-        veryfProjeto: Projeto = result.scalars().unique().one_or_none()
+    query = select(Projeto).filter(Projeto.titulo == novo_projeto.titulo)
+    result = db.execute(query)
+    veryfProjeto: Projeto = result.scalars().unique().one_or_none()
 
     if(veryfProjeto):
         raise HTTPException(detail="Já existe um projeto com esse nome!!", status_code=status.HTTP_403_FORBIDDEN)
     else:
         db.add(novo_projeto)
-        await db.commit()
+        db.commit()
         return novo_projeto
-
-    
 
 #GET Projetos
 @router.get('/', response_model= List[ProjetoSchema], status_code=status.HTTP_200_OK)
-async def get_projetos(db: AsyncSession = Depends(get_session)):
-    async with db as session:
-        query = select(Projeto)
-        result = await session.execute(query)
-        projetos: List[Projeto] = result.scalars().unique().all()
+async def get_projetos(db: Session = Depends(get_session)):
+   
+    query = select(Projeto)
+    result = db.execute(query)
+    projetos: List[Projeto] = result.scalars().unique().all()
 
     return projetos
 
 #GET Projeto
 @router.get('/{projeto_id}', response_model= ProjetoSchema, status_code=status.HTTP_200_OK)
-async def get_projeto(projeto_id: str, db: AsyncSession = Depends(get_session)):
-    async with db as session:
-        query = select(Projeto).filter(Projeto.id == projeto_id)
-        result = await session.execute(query)
-        projeto: Projeto = result.scalars().unique().one_or_none()
+async def get_projeto(projeto_id: str, db: Session = Depends(get_session)):
+   
+    query = select(Projeto).filter(Projeto.id == projeto_id)
+    result = db.execute(query)
+    projeto: Projeto = result.scalars().unique().one_or_none()
     
     if projeto:
         return projeto
@@ -79,51 +62,95 @@ async def get_projeto(projeto_id: str, db: AsyncSession = Depends(get_session)):
 
 #PUT Projeto
 @router.put('/{projeto_id}', response_model=ProjetoSchema, status_code=status.HTTP_202_ACCEPTED)
-async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db: AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    async with db as session:
+async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    if usuario_logado:
         query = select(Projeto).filter(Projeto.id == projeto_id)
-        result = await session.execute(query)
+        result = db.execute(query)
         projeto_up: Projeto = result.scalars().unique().one_or_none()
-    
+
         if projeto_up:
             if projeto.titulo:
                 projeto_up.titulo = projeto.titulo
-            if projeto.membros:
-                # Filtrar usuários pelo ID fornecido no corpo da solicitação
-                membrosList = [usuario for usuario in projeto.membros]
-                # Adicionar usuários à lista de membros se eles não estiverem lá
-                for usuario_id in membrosList:
-                    if usuario_id not in [membro.id for membro in projeto_up.membros]:
-                        usuario = await session.get(Usuario, usuario_id)
-                        if usuario:
-                            projeto_up.membros.append(usuario)
-            else:
-                # Se a lista de membros enviada estiver vazia, limpe a lista de membros do projeto
-                projeto_up.membros = projeto.membros
-           
+            if projeto.descricao:
+                projeto_up.descricao = projeto.descricao
+                
             projeto_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            await session.commit()
+            db.commit()
             return projeto_up
         
         else:
             raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
-#DELETE Projeto
-@router.delete('/{projeto_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_projeto(projeto_id: str, db: AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    async with db as session:
-        query = select(Projeto).filter(Projeto.id == projeto_id)
-        result = await session.execute(query)
-        projeto_del: Projeto = result.scalars().unique().one_or_none()
-    
-        if projeto_del:
-            if(projeto_del.autor_id == usuario_logado.id):
-                await session.delete(projeto_del)
-                await session.commit()
-                return Response(status_code=status.HTTP_204_NO_CONTENT)
+##POST member in Project
+@router.post('/addMember', status_code=status.HTTP_201_CREATED)
+async def post_member(data: ProjetoSchemaAddMember, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)): 
+    if usuario_logado:
+        query = select(Projeto).filter(Projeto.id == data.idProjeto)
+        result = db.execute(query)
+        projeto:Projeto = result.scalars().unique().one_or_none()
+
+        if projeto is None:
+            raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+
+        query = select(Usuario).filter(Usuario.id == data.idUsuario)
+        result = db.execute(query)
+        usuario: Usuario = result.scalars().unique().one_or_none()
+
+        if usuario is None:
+            raise HTTPException(detail="Usuario não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        else:
+            if usuario in projeto.membros:
+                raise HTTPException(detail="Este usuário já é membro desse Projeto!", status_code=status.HTTP_404_NOT_FOUND)
             else:
-                raise HTTPException(detail="Você não tem permissão para excluir este projeto!", status_code=status.HTTP_403_FORBIDDEN)
+                projeto.membros.append(usuario)
+
+                db.add(projeto)
+                db.commit()
+                return HTTPException(detail="Membro adicionado com sucesso!", status_code=status.HTTP_201_CREATED)
+
+    
+#DELETE member projeto
+@router.delete('/removeMember/{projeto_id}/{member_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_member_project(projeto_id: str, member_id: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    if usuario_logado:
+        query = select(Projeto).filter(Projeto.id == projeto_id)
+        result = db.execute(query)
+        projeto: Projeto = result.scalars().unique().one_or_none()
+
+        if projeto is None:
+            raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        
+        member_uuid = uuid.UUID(member_id)
+        member_to_remove = None
+        for member in projeto.membros:
+            if member.id == member_uuid:
+                member_to_remove = member
+                break
+            
+        if member_to_remove:
+            # Remover membro diretamente da tabela de associação
+            delete_stmt = usuario_projeto_association.delete().where(
+                usuario_projeto_association.c.projeto_id == projeto_id,
+                usuario_projeto_association.c.usuario_id == member_id
+            )
+            db.execute(delete_stmt)
+            db.commit()
+        else:
+            raise HTTPException(detail="Membro não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        
+#DELETE projeto
+@router.delete('/{projeto_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_projeto(projeto_id: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    if usuario_logado:
+        query = select(Projeto).filter(Projeto.id == projeto_id)
+        result = db.execute(query)
+        projeto_del: Projeto = result.scalars().unique().one_or_none()
+
+        if projeto_del:
+            db.delete(projeto_del)
+            db.commit()
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
         
         else:
             raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)

@@ -8,12 +8,24 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = os.getenv('POSTGRES_PASSWORD')
     POSTGRES_USER: str = os.getenv('POSTGRES_USER')
     POSTGRES_DB: str = os.getenv('POSTGRES_DB')
+    
+    DATABASE_PORT_TEST: int = os.getenv('DATABASE_PORT_TEST')
+    POSTGRES_PASSWORD_TEST: str = os.getenv('POSTGRES_PASSWORD_TEST')
+    POSTGRES_USER_TEST: str = os.getenv('POSTGRES_USER_TEST')
+    POSTGRES_DB_TEST: str = os.getenv('POSTGRES_DB_TEST')
+
     API_V1_STR: str = os.getenv('API_V1_STR')
 
-    @property
-    def DB_URL(self) -> str:
-        return f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
-   
+    if(os.getenv('IS_DB') == 'dev'):
+        @property
+        def DB_URL(self) -> str:
+            return f'postgresql://{self.POSTGRES_USER_TEST}:{self.POSTGRES_PASSWORD_TEST}@localhost:{self.DATABASE_PORT_TEST}/{self.POSTGRES_DB_TEST}'
+    else:
+        @property
+        def DB_URL(self) -> str:
+            return f'postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
+    
+    
     DBBaseModel: ClassVar = declarative_base()
 
     #DIca de como gerar token no pront do python: token: str = secrets.token_urlsafe(32)

@@ -3,14 +3,14 @@ from datetime import datetime
 from sqlalchemy import String, Column, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 from core.config import settings
-from sqlalchemy.dialects.postgresql import UUID
-from models.associetions import usuario_laboratorio_association
+from sqlalchemy_utils import UUIDType
+from models.associetions import usuario_laboratorio_association, laboratorio_projeto_association
 
 class Laboratorio(settings.DBBaseModel):
     __tablename__ = 'laboratorios'
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    coordenador_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=False)
+    id = Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
+    coordenador_id = Column(UUIDType(binary=False), ForeignKey("usuario.id"), nullable=False)
     nome = Column(String(256), nullable=False)
     sobre = Column(String(5000), nullable=False)
     descricao = Column(String(256), nullable=True)
@@ -21,6 +21,12 @@ class Laboratorio(settings.DBBaseModel):
     membros = relationship(
         "Usuario",
         secondary=usuario_laboratorio_association,
+        back_populates="laboratorios",
+        lazy="joined"
+    )
+    projetos = relationship(
+        "Projeto",
+        secondary=laboratorio_projeto_association,
         back_populates="laboratorios",
         lazy="joined"
     )

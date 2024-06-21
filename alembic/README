@@ -1,0 +1,9 @@
+Generic single-database configuration.
+
+## Criar migration:
+
+- ``` alembic revision --autogenerate -m "Migração inicial!" ```
+
+## Aplicar migration
+
+- ``` alembic upgrade head ```
