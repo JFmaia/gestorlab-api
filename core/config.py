@@ -2,28 +2,21 @@ import os
 from typing import ClassVar
 from pydantic_settings import BaseSettings
 from sqlalchemy.orm import declarative_base
+from dotenv import load_dotenv
 
-class Settings(BaseSettings):
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
+class Settings(BaseSettings): 
+    IS_DB: str = os.getenv('IS_DB')
+    API_V1_STR: str = os.getenv('API_V1_STR')
     DATABASE_PORT: int = os.getenv('DATABASE_PORT')
     POSTGRES_PASSWORD: str = os.getenv('POSTGRES_PASSWORD')
     POSTGRES_USER: str = os.getenv('POSTGRES_USER')
     POSTGRES_DB: str = os.getenv('POSTGRES_DB')
     
-    DATABASE_PORT_TEST: int = os.getenv('DATABASE_PORT_TEST')
-    POSTGRES_PASSWORD_TEST: str = os.getenv('POSTGRES_PASSWORD_TEST')
-    POSTGRES_USER_TEST: str = os.getenv('POSTGRES_USER_TEST')
-    POSTGRES_DB_TEST: str = os.getenv('POSTGRES_DB_TEST')
-
-    API_V1_STR: str = os.getenv('API_V1_STR')
-
-    if(os.getenv('IS_DB') == 'dev'):
-        @property
-        def DB_URL(self) -> str:
-            return f'postgresql://{self.POSTGRES_USER_TEST}:{self.POSTGRES_PASSWORD_TEST}@localhost:{self.DATABASE_PORT_TEST}/{self.POSTGRES_DB_TEST}'
-    else:
-        @property
-        def DB_URL(self) -> str:
-            return f'postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
+    @property
+    def DB_URL(self) -> str:
+        return f'postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
     
     
     DBBaseModel: ClassVar = declarative_base()
