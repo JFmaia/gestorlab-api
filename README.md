@@ -1,18 +1,21 @@
 ## Rodando o Projeto:
 
-> 1. Ao clonar o projeto crie seu ambiente de desenvolvimento python com virtualenv ou venv e entre nele.
+#### Passo 1: Apos clonar o repositorio busque todas as branchs do repositorio que foi clonado e depois entre na branch ***developer***
+- ``` git fetch ```
+- ``` git checkout developer ```
 
-> 2. Depois de está já no seu ambiente virtual rode ``` pip install -r requirements.txt ```, para instalar em seu ambiente as dependecias do projeto.
+#### Passo 2: Agora estando na branch ***developer*** crie seu ambiente de desenvolvimento python com virtualenv ou venv e entre nele
+- ``` python3 -m venv "NOME_DO_AMBIENTE" ```
+- ``` source NOME_DO_AMBIENTE/bin/activate ```
 
-> 3. Depois da instalação faça uma copia do arquivo ** .env.example ** e renomei essa compia para **.env**, por fim na **.env** preencha as variaveis que estão vazias.
-- OBS: Lembre-se de preenche-las com dados diferentes para que as variaves de test não sejam iguais.
-  
-> 4. Logo depois de preenche-las rode o comando no terminal ``` docker compose up ```, para que ambos os bancos sejam criados.
+#### Passo 3: Depois de está já no seu ambiente virtual rode ```pip install -r requirements.txt```, para instalar no seu ambiente as dependecias do projeto.
 
-> 5. Apois crie os modelos no banco utilizando o comando no terminal ``` python3 create_tables.py ```.
+#### Passo 4: Faça uma copia do arquivo ***.env.example***, renomei a copia para ***.env*** e por fim preencha os campos vazios que exitem em ***.env***, exemplo: ***POSTGRES_USER='useradmin'***
 
-> 6. Por fim rode o projeto com o comando ``` python3 main.py ```
+#### Passo 5: Crie uma pasta chamada "versions" dentro da pasta ***alembic***, depois disso vai no terminal e digite ```docker compose up```, assim será feito a a criação de migration, implementada no banco e tbm a inicialização do projeto tbm já vai ser feita!
+
+#### Passo 6: Para testar a api rodando use ```http://localhost:8000/docs```, onde será visto todos os endpoints.
 
 ### Testes:
 
-> Para rodar os testes utilize o comando ``` pytest ```, e todos os testes iram rodar.
+> Para rodar os testes utilize o comando ``` pytest -v ```, e todos os testes iram rodar.
