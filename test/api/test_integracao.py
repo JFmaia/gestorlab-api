@@ -65,7 +65,6 @@ def test_create_laboratorio(client):
     }
     data = create_laboratorio()
     response = client.post('/gestorlab/laboratorios/', headers=headers,json=data)
-    print(response.json())
     assert response.status_code == 201
 
 def test_delete_coordenado_of_laboratory(db, client):
