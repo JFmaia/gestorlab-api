@@ -155,16 +155,17 @@ async def delete_member_laboratory(
 #DELETE laboratorio
 @router.delete('/{laboratorio_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_laboratorio(laboratorio_id: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id).filter(Laboratorio.coordenador_id == usuario_logado.id)
-    result = db.execute(query)
-    laboratorio_del: Laboratorio = result.scalars().unique().one_or_none()
+    if usuario_logado:
+        query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
+        result = db.execute(query)
+        laboratorio_del: Laboratorio = result.scalars().unique().one_or_none()
 
-    if laboratorio_del:
+        if laboratorio_del:
+            
+            db.delete(laboratorio_del)
+            db.commit()
+            
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
         
-        db.delete(laboratorio_del)
-        db.commit()
-        
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-    
-    else:
-        raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        else:
+            raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)

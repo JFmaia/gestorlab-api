@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from models.projeto import Projeto
 from models.usuario import Usuario
 from models.associetions import usuario_projeto_association
-from schemas.projeto_schema import ProjetoSchema,ProjetoSchemaCreate,ProjetoSchemaUp, ProjetoSchemaAddMember
+from schemas.projeto_schema import ProjetoSchema, ProjetoSchemaCreate, ProjetoSchemaUp, ProjetoSchemaAddMember
 from core.deps import get_session, get_current_user
 from datetime import datetime
 
@@ -82,25 +82,7 @@ async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db: Session = D
         else:
             raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
-#DELETE Projeto
-@router.delete('/{projeto_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_projeto(projeto_id: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    query = select(Projeto).filter(Projeto.id == projeto_id).filter(Projeto.autor_id == usuario_logado.id)
-    result = db.execute(query)
-    projeto_del: Projeto = result.scalars().unique().one_or_none()
-
-    if projeto_del:
-        if(projeto_del.autor_id == usuario_logado.id):
-            db.delete(projeto_del)
-            db.commit()
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
-        else:
-            raise HTTPException(detail="Você não tem permissão para excluir este projeto!", status_code=status.HTTP_403_FORBIDDEN)
-    
-    else:
-        raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
-
-##POST member in laboratory
+##POST member in Project
 @router.post('/addMember', status_code=status.HTTP_201_CREATED)
 async def post_member(data: ProjetoSchemaAddMember, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)): 
     if usuario_logado:
@@ -111,7 +93,7 @@ async def post_member(data: ProjetoSchemaAddMember, db: Session = Depends(get_se
         if projeto is None:
             raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
 
-        query = select(Usuario).filter(Usuario.email == data.emailUser)
+        query = select(Usuario).filter(Usuario.id == data.idUsuario)
         result = db.execute(query)
         usuario: Usuario = result.scalars().unique().one_or_none()
 
@@ -128,7 +110,7 @@ async def post_member(data: ProjetoSchemaAddMember, db: Session = Depends(get_se
                 return HTTPException(detail="Membro adicionado com sucesso!", status_code=status.HTTP_201_CREATED)
 
     
-#DELETE laboratorio
+#DELETE member projeto
 @router.delete('/removeMember/{projeto_id}/{member_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_member_project(projeto_id: str, member_id: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     if usuario_logado:
@@ -157,19 +139,18 @@ async def delete_member_project(projeto_id: str, member_id: str, db: Session = D
         else:
             raise HTTPException(detail="Membro não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
-#DELETE laboratorio
+#DELETE projeto
 @router.delete('/{projeto_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_projeto(projeto_id: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    query = select(Projeto).filter(Projeto.id == projeto_id).filter(Projeto.autor_id == usuario_logado.id)
-    result = db.execute(query)
-    laboratorio_del: Projeto = result.scalars().unique().one_or_none()
+    if usuario_logado:
+        query = select(Projeto).filter(Projeto.id == projeto_id)
+        result = db.execute(query)
+        projeto_del: Projeto = result.scalars().unique().one_or_none()
 
-    if laboratorio_del:
+        if projeto_del:
+            db.delete(projeto_del)
+            db.commit()
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
         
-        db.delete(laboratorio_del)
-        db.commit()
-        
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-    
-    else:
-        raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        else:
+            raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
