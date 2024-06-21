@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 class Settings(BaseSettings): 
-    IS_DB: str = os.getenv('IS_DB')
     API_V1_STR: str = os.getenv('API_V1_STR')
     DATABASE_PORT: int = os.getenv('DATABASE_PORT')
     POSTGRES_PASSWORD: str = os.getenv('POSTGRES_PASSWORD')
@@ -16,7 +15,7 @@ class Settings(BaseSettings):
     
     @property
     def DB_URL(self) -> str:
-         return f'postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@dbpostgrestest:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
+        return f'postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@dbpostgrestest:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
     
     
     DBBaseModel: ClassVar = declarative_base()
