@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, UUID4,EmailStr
+from pydantic import BaseModel, UUID4
 from datetime import datetime
 from .usuario_schema import UsuarioSchemaBase
 
