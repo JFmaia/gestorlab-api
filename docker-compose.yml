@@ -29,7 +29,7 @@ services:
         "--",
         "sh",
         "-c",
-        "alembic revision --autogenerate -m 'Migração inicial!' && alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
+        "alembic upgrade head && python create_utils.py && uvicorn main:app --host 0.0.0.0 --port 8000"
       ]
 
 volumes:
