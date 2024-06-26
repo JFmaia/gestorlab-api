@@ -4,7 +4,7 @@ from sqlalchemy import BigInteger, String, Column, Boolean
 from sqlalchemy.orm import relationship
 from core.config import settings
 from sqlalchemy_utils import UUIDType
-from models.associetions import usuario_laboratorio_association, usuario_projeto_association
+from models.associetions import usuario_laboratorio_association, usuario_projeto_association, usuario_permission_association
 class Usuario(settings.DBBaseModel):
     __tablename__ = 'usuario'
 
@@ -28,6 +28,11 @@ class Usuario(settings.DBBaseModel):
         back_populates="membros",
         lazy="joined"
     )
+    permissoes = relationship(
+        "Permissao",
+        secondary=usuario_permission_association,
+        lazy="joined"
+    )
     data_inicial = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
+    data_nascimento = Column(String(256), nullable=False)
     data_atualizacao = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
-    tag = Column(BigInteger, default=1, nullable=False)
