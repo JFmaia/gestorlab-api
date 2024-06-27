@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import BigInteger, String, Column, Boolean
+from sqlalchemy import BigInteger, String, Column, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from core.config import settings
 from sqlalchemy_utils import UUIDType
@@ -33,6 +33,7 @@ class Usuario(settings.DBBaseModel):
         secondary=usuario_permission_association,
         lazy="joined"
     )
+    genero = Column(UUIDType(binary=False), ForeignKey("generos.id"), nullable=False)
     data_inicial = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
     data_nascimento = Column(String(256), nullable=False)
     data_atualizacao = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
