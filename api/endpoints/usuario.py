@@ -5,9 +5,13 @@ from fastapi.security import  OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy.future import select 
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+import uuid
 
 from models.usuario import Usuario
 from models.laboratorio import Laboratorio
+from models.permissao import Permissao
+from models.genero import Genero
 from schemas.usuario_schema import UsuarioSchemaBase, UsuarioSchemaCreate, UsuarioSchemaUp, UsuarioSchemaLaboratoriosAndProjetos
 from core.deps import get_current_user, get_session
 from core.security import gerar_hash_senha
@@ -26,26 +30,46 @@ async def get_logado(usuario_logado: Usuario = Depends(get_current_user)):
 
 #POST Signup
 @router.post('/signup', status_code=status.HTTP_201_CREATED, response_model=UsuarioSchemaBase)
-async def post_usuario(usuario: UsuarioSchemaCreate, db=Depends(get_session)):
+async def post_usuario(usuario: UsuarioSchemaCreate,  db: Session = Depends(get_session)):
+
+    list_aux: List[Permissao] = []
+    
+    query= select(Permissao)
+    result= db.execute(query)
+    permissoes: List[Permissao] = result.scalars().unique().all()
+
+    for item in usuario.list_permissoes:
+        for permissao in permissoes:
+            if item == permissao.id:
+                list_aux.append(permissao)
+
+    query = select(Genero).filter(Genero.id == usuario.genero)
+    result = db.execute(query)
+    genero: Genero = result.scalars().unique().one_or_none()
+    
+    if genero is None:
+        raise HTTPException(detail="Genero não encontrado", status_code=status.HTTP_404_NOT_FOUND)
+
     novo_usuario: Usuario = Usuario(
         senha=gerar_hash_senha(usuario.senha),
         primeiro_nome=usuario.primeiro_nome,
         primeiro_acesso= True,
         segundo_nome=usuario.segundo_nome,
+        data_nascimento= usuario.data_nascimento,
         email=usuario.email,
+        genero=genero.id,
         matricula=usuario.matricula,
         tel=usuario.tel,
-        tag=usuario.tag
+        permissoes = list_aux
     )
 
-    with db as session:
-        try:
-            session.add(novo_usuario)
-            session.commit()
+    try:
+        db.add(novo_usuario)
+        db.commit()
 
-            return novo_usuario
-        except IntegrityError:
-            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Já existe um usuario com essa matrícula cadastrada!")
+        return novo_usuario
+    except IntegrityError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 # GET Usuarios
 @router.get('/', response_model=List[UsuarioSchemaBase])
