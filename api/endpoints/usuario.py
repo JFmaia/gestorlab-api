@@ -96,8 +96,8 @@ async def get_usuario(usuario_id: str, db= Depends(get_session)):
 #PUT Usuario
 @router.put('/{usuario_id}', response_model=UsuarioSchemaBase, status_code=status.HTTP_202_ACCEPTED)
 async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db=Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-
     if usuario_logado:
+        list_aux: List[Permissao] = []
         with db as session:
             query= select(Usuario).filter(Usuario.id == usuario_id)
             result= session.execute(query)
@@ -114,8 +114,29 @@ async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db=Depends(get_
                     usuario_up.matricula = usuario.matricula
                 if usuario.senha:
                     usuario_up.senha = gerar_hash_senha(usuario.senha)
-                if usuario.tag:
-                    usuario_up.tag = usuario.tag
+                if usuario.data_nascimento:
+                    usuario_up.data_nascimento = usuario.data_nascimento
+                if usuario.genero:
+                    query = select(Genero).filter(Genero.id == usuario.genero)
+                    result = db.execute(query)
+                    genero: Genero = result.scalars().unique().one_or_none()
+                    
+                    if genero is None:
+                        raise HTTPException(detail="Genero não encontrado", status_code=status.HTTP_404_NOT_FOUND)
+                    else:
+                        usuario_up.genero = genero.id
+                if usuario.list_permissoes:
+                    query= select(Permissao)
+                    result= db.execute(query)
+                    permissoes: List[Permissao] = result.scalars().unique().all()
+
+                    for item in usuario.list_permissoes:
+                        for permissao in permissoes:
+                            if item == permissao.id:
+                                list_aux.append(permissao)
+
+                    usuario_up.permissoes.clear()
+                    usuario_up.permissoes = list_aux
                 if usuario.tel:
                     usuario_up.tel = usuario.tel
 

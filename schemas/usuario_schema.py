@@ -41,5 +41,6 @@ class UsuarioSchemaUp(UsuarioSchemaBase):
     senha: Optional[str]
     email: Optional[EmailStr]
     matricula: Optional[int]
+    genero: Optional[UUID4]
     tel: Optional[int]
-    tag: Optional[int]
+    list_permissoes: Optional[List[UUID4]] = None
