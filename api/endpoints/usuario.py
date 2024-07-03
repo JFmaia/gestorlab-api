@@ -22,6 +22,15 @@ from datetime import datetime
 
 router = APIRouter()
 
+# Autenticate
+@router.get('/auth')
+async def get_logado(usuario_logado: Usuario = Depends(get_current_user)):
+    credential_exception: HTTPException = HTTPException(
+        status_code= status.HTTP_200_OK,
+        detail='Usuário autenticado com sucesso!',
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+    return credential_exception
 
 # GET Logado
 @router.get('/logado', response_model= UsuarioSchemaBase)
