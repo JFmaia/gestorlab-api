@@ -1,18 +1,22 @@
 
 from typing import Optional, List 
 from pydantic import BaseModel, EmailStr, UUID4
+from schemas.permissao_schema import PermissaoSchema
 
 class UsuarioSchemaBase(BaseModel):
     id: Optional[UUID4] = None 
     data_inicial: Optional[str] = None
     data_atualizacao: Optional[str] = None
     primeiro_acesso: Optional[bool] = None
+    ativo: Optional[bool] = None
     primeiro_nome: str
-    segundo_nome: str 
+    segundo_nome: str
+    data_nascimento: str
+    genero: UUID4
     email: EmailStr
     matricula: int
     tel: int
-    tag: int
+    permissoes: Optional[List[PermissaoSchema]] = None
 
 class Config:
     from_attributes = True
@@ -37,5 +41,6 @@ class UsuarioSchemaUp(UsuarioSchemaBase):
     senha: Optional[str]
     email: Optional[EmailStr]
     matricula: Optional[int]
+    genero: Optional[UUID4]
     tel: Optional[int]
-    tag: Optional[int]
+    list_permissoes: Optional[List[UUID4]] = None
