@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     
     @property
     def DB_URL(self) -> str:
-        return f'postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
+        return f'postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@dbpostgrestest:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
     
     DBBaseModel: ClassVar = declarative_base()
 
