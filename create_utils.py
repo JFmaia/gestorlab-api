@@ -2,8 +2,18 @@ from core.database import Session
 from models.permissao import Permissao
 from models.genero import Genero
 from core.security import gerar_hash_senha
+from sqlalchemy.future import  select
 from models.usuario import Usuario
-from models.__all_models import *  # Certifique-se de importar tudo aqui
+from models.__all_models import *
+from dotenv import load_dotenv
+import os
+
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
+
+EMAIL_USER: str = os.getenv('EMAIL_USER')
+PASSWORD_USER: str = os.getenv('PASSWORD_USER')
+   
 
 def create_permissions():
     """Função para criar quatro permissões na tabela de permissão"""
@@ -33,17 +43,26 @@ def create_user_admin():
     if genero is None:
         print("Erro: Nenhum gênero encontrado.")
         return
+    
+    query= select(Usuario).filter(Usuario.email == EMAIL_USER)
+    result= session.execute(query)
+    usuario: Usuario = result.scalars().unique().one_or_none()
+    if usuario:
+        print("Usuário com matrícula já existe. Não foi criado um novo usuário.")
+        session.close()
+        return
+    
     novo_usuario = Usuario(
-        senha=gerar_hash_senha("admin1234@"),
+        senha=gerar_hash_senha(PASSWORD_USER),
         primeiro_nome="Admin",
         primeiro_acesso=True,
         ativo=True,
         segundo_nome="Admin",
         data_nascimento="00/00/0000",
-        email="admin@gmail.com",
+        email=EMAIL_USER,
         genero=genero.id,
-        matricula=1234567891,
-        tel=12345678911,
+        matricula=0000000000,
+        tel=00000000000,
     )
     session.add(novo_usuario)
     session.commit()

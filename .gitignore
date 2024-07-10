@@ -8,7 +8,6 @@ __pycache__/
 
 # Ignore the docker-compose file
 docker-compose.yml
-docker-compose*
 
 # Ignore all .yml files
 *.yml
