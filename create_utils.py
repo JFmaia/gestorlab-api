@@ -1,73 +1,58 @@
 from core.database import Session
 from models.permissao import Permissao
 from models.genero import Genero
-
+from core.security import gerar_hash_senha
+from models.usuario import Usuario
+from models.__all_models import *  # Certifique-se de importar tudo aqui
 
 def create_permissions():
     """Função para criar quatro permissões na tabela de permissão"""
-
-    # Crie uma sessão do banco de dados
     session = Session()
-    # Defina os nomes das permissões que deseja criar
-    permissions = [
-        "Admin",
-        "Coordenador",
-        "Membro"
-    ]
-
-    # Verifique se alguma permissão já existe antes de criar
+    permissions = ["Admin", "Coordenador", "Membro"]
     existing_permissions = session.query(Permissao).filter(Permissao.title.in_(permissions)).all()
-
-    # Filtre as permissões que não existem ainda
     permissions_to_create = [perm for perm in permissions if perm not in [p.title for p in existing_permissions]]
-
-    # Crie objetos Permissão para cada permissão que precisa ser criada
     new_permissions = [Permissao(title=perm) for perm in permissions_to_create]
-
-    # Adicione as novas permissões à sessão
     session.add_all(new_permissions)
-
-    # Confirme as alterações no banco de dados
     session.commit()
-
-    # Feche a sessão
     session.close()
 
 def create_generos():
-    """Função para criar quatro permissões na tabela de permissão"""
-
-    # Crie uma sessão do banco de dados
     session = Session()
-    # Defina os nomes das permissões que deseja criar
-    generos = [
-        "Masculino", 
-        "Feminino", 
-        "Transgênero", 
-        "Gênero neutro", 
-        "Não-binário"
-    ]
-
-    # Verifique se alguma permissão já existe antes de criar
+    generos = ["Masculino", "Feminino", "Transgênero", "Gênero neutro", "Não-binário"]
     existing_generos = session.query(Genero).filter(Genero.title.in_(generos)).all()
-
-    # Filtre as permissões que não existem ainda
     genero_to_create = [gene for gene in generos if gene not in [p.title for p in existing_generos]]
-
-    # Crie objetos Permissão para cada permissão que precisa ser criada
     new_genero = [Genero(title=gene) for gene in genero_to_create]
-
-    # Adicione as novas permissões à sessão
     session.add_all(new_genero)
-
-    # Confirme as alterações no banco de dados
     session.commit()
-
-    # Feche a sessão
     session.close()
 
-# Verifique se o script está sendo executado diretamente
+def create_user_admin():
+    session = Session()
+    genero = session.query(Genero).first()
+
+    if genero is None:
+        print("Erro: Nenhum gênero encontrado.")
+        return
+    novo_usuario = Usuario(
+        senha=gerar_hash_senha("admin1234@"),
+        primeiro_nome="Admin",
+        primeiro_acesso=True,
+        ativo=True,
+        segundo_nome="Admin",
+        data_nascimento="00/00/0000",
+        email="admin@gmail.com",
+        genero=genero.id,
+        matricula=1234567891,
+        tel=12345678911,
+    )
+    session.add(novo_usuario)
+    session.commit()
+    session.close()
+
 if __name__ == "__main__":
     create_permissions()
     print("Permissões criadas com sucesso!")
     create_generos()
-    print("Generos criados com sucesso!")
+    print("Gêneros criados com sucesso!")
+    create_user_admin()
+    print("Admin criado com sucesso!")

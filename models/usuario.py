@@ -12,6 +12,7 @@ class Usuario(settings.DBBaseModel):
     primeiro_nome = Column(String(256), nullable=False)
     segundo_nome = Column(String(256), nullable=False)
     primeiro_acesso = Column(Boolean(), nullable=False)
+    ativo = Column(Boolean(True), nullable=False, default=False)
     matricula = Column(BigInteger, nullable=False, unique=True)
     email = Column(String(256), index=True, nullable=False, unique=True)
     tel = Column(BigInteger, nullable=True)

@@ -8,6 +8,7 @@ class UsuarioSchemaBase(BaseModel):
     data_inicial: Optional[str] = None
     data_atualizacao: Optional[str] = None
     primeiro_acesso: Optional[bool] = None
+    ativo: Optional[bool] = None
     primeiro_nome: str
     segundo_nome: str
     data_nascimento: str
@@ -25,7 +26,6 @@ from schemas.projeto_schema import ProjetoSchema
 
 class UsuarioSchemaCreate(UsuarioSchemaBase):
     senha: str
-    list_permissoes: List[UUID4]
 
 class UsuarioSchemaAddLaboratorio(UsuarioSchemaBase):
     list_laboratorios: List[UUID4]
