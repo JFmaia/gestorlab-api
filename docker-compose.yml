@@ -11,5 +11,26 @@ services:
     volumes:
       - postgres-db:/var/lib/postgresql/data
 
+  fastapi:
+    build: .
+    container_name: fastapi_app
+    ports:
+      - '8000:8000'
+    depends_on:
+      - dbpostgrestest
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    entrypoint:
+      [
+        "/app/wait-for-it.sh",
+        "dbpostgrestest",
+        "--",
+        "sh",
+        "-c",
+        "alembic revision --autogenerate -m '' && alembic upgrade head && python create_utils.py && uvicorn main:app --host 0.0.0.0 --port 8000"
+      ]
+
 volumes:
   postgres-db:
