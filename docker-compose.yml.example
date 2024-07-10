@@ -1,23 +1,10 @@
 version: '3.9'
 services:
-  dbpostgrestest:
-    image: postgres
-    container_name: dbpostgres
-    ports:
-      - '5432:5432'
-    restart: always
-    env_file:
-      - .env
-    volumes:
-      - postgres-db:/var/lib/postgresql/data
-
   fastapi:
     build: .
-    container_name: fastapi_app
+    container_name: gestorlab_api
     ports:
       - '8000:8000'
-    depends_on:
-      - dbpostgrestest
     env_file:
       - .env
     volumes:
@@ -25,12 +12,9 @@ services:
     entrypoint:
       [
         "/app/wait-for-it.sh",
-        "dbpostgrestest",
+        "HOST_BD",
         "--",
         "sh",
         "-c",
         "alembic revision --autogenerate -m '' && alembic upgrade head && python create_utils.py && uvicorn main:app --host 0.0.0.0 --port 8000"
       ]
-
-volumes:
-  postgres-db:
