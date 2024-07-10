@@ -5,7 +5,7 @@
 > ``` git checkout developer ```
 
 #### Passo 2: Agora estando na branch ***developer*** crie seu ambiente de desenvolvimento python com virtualenv ou venv e entre nele
-> ``` python3 -m venv "NOME_DO_AMBIENTE" ```>
+> ``` python3 -m venv "NOME_DO_AMBIENTE" ```
 > ``` source NOME_DO_AMBIENTE/bin/activate ```
 
 #### Passo 3: Depois de está já no seu ambiente virtual instale no seu ambiente as dependecias do projeto.
