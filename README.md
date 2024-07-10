@@ -12,13 +12,15 @@
 
 #### Passo 4: Faça uma copia do arquivo ***.env.example***, renomei a copia para ***.env*** e por fim preencha os campos vazios que exitem em ***.env***, exemplo: ***POSTGRES_USER='useradmin'***
 
-#### Passo 5: Depois execute no terminal esse comando ``` docker compose up ``` se o seu docker não tem permissão sudo utilize ``` sudo docker compose up ``` isso fará uma imagem do banco de dados do Postgreys.
+#### Passo 5: Na pasta do ***alembic*** crie uma pasta chamada ***versions***
 
-#### Passo 6: Crie uma pasta chamada "versions" dentro da pasta ***alembic***, depois disso vai no terminal e digite ``` alembic revision --autogenerate -m "Migração inicial!" ```, assim será feito a a criação de migration e assim você poderá executar no terminal ``` alembic upgrade head ``` o alembic pegará a ultima migration e adicionara todas as mudanças no banco de dados que no ultmi passo você ativou.
+#### Passo 6: Depois execute no terminal esse comando ``` docker compose up ``` se o seu docker não tem permissão sudo utilize ``` sudo docker compose up ``` isso fará uma imagem do banco de dados do Postgreys.
 
-#### Passo 7: Execute no terminal o comando ``` python create_utils.py ``` isso irá popular algumas tabelas do banco de dados padrões e necessarios.
+#### Passo 7: Crie uma pasta chamada "versions" dentro da pasta ***alembic***, depois disso vai no terminal e digite ``` alembic revision --autogenerate -m "Migração inicial!" ```, assim será feito a a criação de migration e assim você poderá executar no terminal ``` alembic upgrade head ``` o alembic pegará a ultima migration e adicionara todas as mudanças no banco de dados que no ultmi passo você ativou.
 
-#### Passo 8: Para testar a api rodando execute o comando ``` python main.py ```, assim aplicação se inicializa, para acessar use ```http://localhost:8000/docs```, onde será visto todos os endpoints.
+#### Passo 8: Execute no terminal o comando ``` python create_utils.py ``` isso irá popular algumas tabelas do banco de dados padrões e necessarios.
+
+#### Passo 9: Para testar a api rodando execute o comando ``` python main.py ```, assim aplicação se inicializa, para acessar use ```http://localhost:8000/docs```, onde será visto todos os endpoints.
 
 ### Testes:
 
