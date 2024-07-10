@@ -19,7 +19,7 @@ oauth2_schema = OAuth2PasswordBearer (
 )
 
 def autenticar(email: EmailStr, senha:str, db: Session) -> Optional[Usuario]:
-    query = select(Usuario).filter(Usuario.email == email)
+    query = select(Usuario).filter(Usuario.ativo == True).filter(Usuario.email == email)
     result = db.execute(query)
     usuario: Usuario = result.scalars().unique().one_or_none()
 

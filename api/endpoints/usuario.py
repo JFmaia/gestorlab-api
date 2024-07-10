@@ -24,7 +24,7 @@ router = APIRouter()
 
 # Autenticate
 @router.get('/auth')
-async def get_logado(usuario_logado: Usuario = Depends(get_current_user)):
+async def auth_user(usuario_logado: Usuario = Depends(get_current_user)):
     credential_exception: HTTPException = HTTPException(
         status_code= status.HTTP_200_OK,
         detail='Usuário autenticado com sucesso!',
@@ -40,18 +40,6 @@ async def get_logado(usuario_logado: Usuario = Depends(get_current_user)):
 #POST Signup
 @router.post('/signup', status_code=status.HTTP_201_CREATED, response_model=UsuarioSchemaBase)
 async def post_usuario(usuario: UsuarioSchemaCreate,  db: Session = Depends(get_session)):
-
-    list_aux: List[Permissao] = []
-    
-    query= select(Permissao)
-    result= db.execute(query)
-    permissoes: List[Permissao] = result.scalars().unique().all()
-
-    for item in usuario.list_permissoes:
-        for permissao in permissoes:
-            if item == permissao.id:
-                list_aux.append(permissao)
-
     query = select(Genero).filter(Genero.id == usuario.genero)
     result = db.execute(query)
     genero: Genero = result.scalars().unique().one_or_none()
@@ -63,13 +51,13 @@ async def post_usuario(usuario: UsuarioSchemaCreate,  db: Session = Depends(get_
         senha=gerar_hash_senha(usuario.senha),
         primeiro_nome=usuario.primeiro_nome,
         primeiro_acesso= True,
+        ativo= False,
         segundo_nome=usuario.segundo_nome,
         data_nascimento= usuario.data_nascimento,
         email=usuario.email,
         genero=genero.id,
         matricula=usuario.matricula,
         tel=usuario.tel,
-        permissoes = list_aux
     )
 
     try:
