@@ -14,7 +14,6 @@ docker-compose.yml
 
 # Distribution / packaging
 .env
-versions/
 test.db
 gambit/
 .Python
