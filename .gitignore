@@ -6,12 +6,6 @@ __pycache__/
 # C extensions
 *.so
 
-# Ignore the docker-compose file
-docker-compose.yml
-
-# Ignore all .yml files
-*.yml
-
 # Distribution / packaging
 .env
 test.db
