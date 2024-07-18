@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import BigInteger, String, Column, Boolean, ForeignKey
+from sqlalchemy import BigInteger, String, Column, Boolean, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from core.config import settings
 from sqlalchemy_utils import UUIDType
@@ -10,6 +10,7 @@ class Usuario(settings.DBBaseModel):
 
     id = Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
     primeiro_nome = Column(String(256), nullable=False)
+    image =  Column(Text, nullable=True)
     segundo_nome = Column(String(256), nullable=False)
     primeiro_acesso = Column(Boolean(), nullable=False)
     ativo = Column(Boolean(True), nullable=False, default=False)
