@@ -6,14 +6,13 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.future import select 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-import uuid
-
 from models.usuario import Usuario
 from models.laboratorio import Laboratorio
 from models.permissao import Permissao
+from models.pending import Pending
 from models.genero import Genero
 from schemas.usuario_schema import UsuarioSchemaBase, UsuarioSchemaCreate, UsuarioSchemaUp, UsuarioSchemaLaboratoriosAndProjetos
-from core.deps import get_current_user, get_session
+from core.deps import get_current_user, get_session,process_image
 from core.security import gerar_hash_senha
 from core.auth import autenticar, criar_token_acesso
 from sqlalchemy.orm import selectinload
@@ -39,21 +38,32 @@ async def get_logado(usuario_logado: Usuario = Depends(get_current_user)):
 
 #POST Signup
 @router.post('/signup', status_code=status.HTTP_201_CREATED, response_model=UsuarioSchemaBase)
-async def post_usuario(usuario: UsuarioSchemaCreate,  db: Session = Depends(get_session)):
+async def post_usuario(usuario: UsuarioSchemaCreate, db: Session = Depends(get_session)):
     query = select(Genero).filter(Genero.id == usuario.genero)
     result = db.execute(query)
     genero: Genero = result.scalars().unique().one_or_none()
-    
+
     if genero is None:
         raise HTTPException(detail="Genero não encontrado", status_code=status.HTTP_404_NOT_FOUND)
+
+    # Verificar se a matrícula já existe
+    matricula_existente = db.execute(select(Usuario).filter(Usuario.matricula == usuario.matricula)).first()
+    if matricula_existente:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Matrícula já existe")
+    
+     # Processar a imagem se ela não for nula
+    processed_image = None
+    if usuario.image:
+        processed_image = process_image(usuario.image)
 
     novo_usuario: Usuario = Usuario(
         senha=gerar_hash_senha(usuario.senha),
         primeiro_nome=usuario.primeiro_nome,
-        primeiro_acesso= True,
-        ativo= False,
+        primeiro_acesso=True,
+        ativo=False,
+        image=processed_image,
         segundo_nome=usuario.segundo_nome,
-        data_nascimento= usuario.data_nascimento,
+        data_nascimento=usuario.data_nascimento,
         email=usuario.email,
         genero=genero.id,
         matricula=usuario.matricula,
@@ -63,6 +73,7 @@ async def post_usuario(usuario: UsuarioSchemaCreate,  db: Session = Depends(get_
     try:
         db.add(novo_usuario)
         db.commit()
+        db.refresh(novo_usuario)
 
         return novo_usuario
     except IntegrityError as e:
@@ -111,6 +122,8 @@ async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db=Depends(get_
                     usuario_up.matricula = usuario.matricula
                 if usuario.senha:
                     usuario_up.senha = gerar_hash_senha(usuario.senha)
+                if usuario.image:
+                    usuario_up.image = process_image(usuario.image)
                 if usuario.data_nascimento:
                     usuario_up.data_nascimento = usuario.data_nascimento
                 if usuario.genero:
@@ -167,6 +180,7 @@ async def delete_usuario(usuario_id: str, db=Depends(get_session), usuario_logad
             usuario_del: Usuario = result_usuario.scalars().unique().one_or_none()
 
             if usuario_del:
+                session.query(Pending).filter(Pending.id_user == usuario_del.id).delete()
                 session.delete(usuario_del)
                 session.commit()
 
