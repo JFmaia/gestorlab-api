@@ -10,6 +10,7 @@ class UsuarioSchemaBase(BaseModel):
     primeiro_acesso: Optional[bool] = None
     ativo: Optional[bool] = None
     primeiro_nome: str
+    image: Optional[str] = None
     segundo_nome: str
     data_nascimento: str
     genero: UUID4
@@ -44,3 +45,4 @@ class UsuarioSchemaUp(UsuarioSchemaBase):
     genero: Optional[UUID4]
     tel: Optional[int]
     list_permissoes: Optional[List[UUID4]] = None
+    image: Optional[str] = None
