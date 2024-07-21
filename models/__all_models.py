@@ -4,3 +4,4 @@ from models.permissao import Permissao
 from models.genero import Genero
 from models.pending import Pending
 from models.usuario import Usuario
+from models.permissao_lab import PermissaoLaboratorio

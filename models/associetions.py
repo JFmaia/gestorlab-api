@@ -31,3 +31,10 @@ usuario_permission_association = Table(
     Column('usuario_id', UUIDType(binary=False), ForeignKey('usuario.id')),
     Column('permissao_id', UUIDType(binary=False), ForeignKey('permissao.id'))
 )
+
+laboratorio_permission_association = Table(
+    'laboratorio_permissao',
+    settings.DBBaseModel.metadata,
+    Column('laboratorio_id', UUIDType(binary=False), ForeignKey('laboratorios.id')),
+    Column('permissao_laboratorio_id', UUIDType(binary=False), ForeignKey('permissao_laboratorio.id'))
+)

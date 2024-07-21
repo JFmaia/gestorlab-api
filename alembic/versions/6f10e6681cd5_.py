@@ -1,8 +1,8 @@
 """
 
-Revision ID: 0302328dd3e9
-Revises: 25409733d2b7
-Create Date: 2024-07-11 16:02:35.741269
+Revision ID: 6f10e6681cd5
+Revises: 
+Create Date: 2024-07-21 10:22:48.892488
 
 """
 from typing import Sequence, Union
@@ -13,8 +13,8 @@ import sqlalchemy_utils
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0302328dd3e9'
-down_revision: Union[str, None] = '25409733d2b7'
+revision: str = '6f10e6681cd5'
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -31,9 +31,18 @@ def upgrade() -> None:
     sa.Column('title', sa.String(length=256), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('permissao_laboratorio',
+    sa.Column('id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
+    sa.Column('id_user', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
+    sa.Column('id_lab', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
+    sa.Column('perm_id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
+    sa.ForeignKeyConstraint(['perm_id'], ['permissao.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('usuario',
     sa.Column('id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
     sa.Column('primeiro_nome', sa.String(length=256), nullable=False),
+    sa.Column('image', sa.Text(), nullable=True),
     sa.Column('segundo_nome', sa.String(length=256), nullable=False),
     sa.Column('primeiro_acesso', sa.Boolean(), nullable=False),
     sa.Column('ativo', sa.Boolean(create_constraint=True), nullable=False),
@@ -81,6 +90,12 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['permissao_id'], ['permissao.id'], ),
     sa.ForeignKeyConstraint(['usuario_id'], ['usuario.id'], )
     )
+    op.create_table('laboratorio_permissao',
+    sa.Column('laboratorio_id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=True),
+    sa.Column('permissao_laboratorio_id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=True),
+    sa.ForeignKeyConstraint(['laboratorio_id'], ['laboratorios.id'], ),
+    sa.ForeignKeyConstraint(['permissao_laboratorio_id'], ['permissao_laboratorio.id'], )
+    )
     op.create_table('projetos',
     sa.Column('id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
     sa.Column('titulo', sa.String(length=256), nullable=False),
@@ -121,11 +136,13 @@ def downgrade() -> None:
     op.drop_table('laboratorio_projeto')
     op.drop_table('usuario_laboratorio')
     op.drop_table('projetos')
+    op.drop_table('laboratorio_permissao')
     op.drop_table('usuario_permissao')
     op.drop_table('pendings')
     op.drop_table('laboratorios')
     op.drop_index(op.f('ix_usuario_email'), table_name='usuario')
     op.drop_table('usuario')
+    op.drop_table('permissao_laboratorio')
     op.drop_table('permissao')
     op.drop_table('generos')
     # ### end Alembic commands ###

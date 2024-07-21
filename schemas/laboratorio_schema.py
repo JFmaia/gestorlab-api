@@ -4,6 +4,17 @@ from datetime import datetime
 from .usuario_schema import UsuarioSchemaBase
 from .projeto_schema import ProjetoSchema
 
+class PermissaoLaboratorioResponse(BaseModel):
+    id: UUID4
+    id_user: UUID4
+    id_lab: UUID4
+    perm_id: UUID4
+
+class PermissaoLaboratorioCreate(BaseModel):
+    id_user: UUID4
+    id_lab: UUID4
+    perm_id: UUID4
+
 class LaboratorioSchema(BaseModel):
     id: Optional[UUID4] = None 
     coordenador_id: Optional[UUID4] = None 
@@ -16,6 +27,7 @@ class LaboratorioSchema(BaseModel):
     data_up: Optional[datetime] = None
     membros: Optional[List[UsuarioSchemaBase]] = None
     projetos: Optional[List[ProjetoSchema]] = None
+    lista_perm: Optional[List[PermissaoLaboratorioResponse]] = None
 
     class Config:
         from_attributes = True
@@ -40,3 +52,8 @@ class LaboratorioSchemaAddMember(BaseModel):
 
 class LaboratorioSchemaAddProjeto(BaseModel):
     id_projeto: str
+
+class PermissaoLaboratorioUp(BaseModel):
+    id: UUID4
+    id_lab: UUID4
+    perm_id: UUID4
