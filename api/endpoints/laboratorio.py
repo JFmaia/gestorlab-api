@@ -1,5 +1,5 @@
 from typing import List
-from uuid import UUID
+import uuid
 
 from fastapi import APIRouter, status, Depends, HTTPException, Response
 
