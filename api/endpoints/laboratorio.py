@@ -16,6 +16,9 @@ from datetime import datetime
 
 router = APIRouter()
 
+
+############################ End Points basicos do laboratorio  #############################
+
 #POST Laboratorio
 @router.post('/', status_code=status.HTTP_201_CREATED, response_model=LaboratorioSchema)
 async def post_laboratorio(
@@ -95,34 +98,28 @@ async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp,
         
         else:
             raise HTTPException(detail="laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
-
-## Upgrade permission laboratorio
-@router.post('/upPermission', response_model=LaboratorioSchema, status_code=status.HTTP_202_ACCEPTED)
-def update_perm(
-    value: PermissaoLaboratorioUp,
-    db: Session = Depends(get_session)
-):
-    # Verifica se a permissão existe
-    db_permissao = db.query(Permissao).filter(Permissao.id == value.perm_id).first()
-    if db_permissao is None:
-        raise HTTPException(status_code=404, detail="Permissao not found")
-
-    # Verifica se o laboratório existe
-    query = select(Laboratorio).filter(Laboratorio.id == value.id_lab)
-    result = db.execute(query)
-    laboratorio_up: Laboratorio = result.scalars().unique().one_or_none()
-    if laboratorio_up is None:
-        raise HTTPException(status_code=404, detail="Laboratorio not found")
-    
-    # Verifica se já existe uma permissão de laboratório para o usuário e laboratório
-    for perm in laboratorio_up.lista_perm:
-        if perm.id == value.id:
-            perm.perm_id = value.perm_id
-    
-    db.add(laboratorio_up)
-    db.commit()
-    return laboratorio_up
         
+#DELETE laboratorio
+@router.delete('/{laboratorio_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_laboratorio(laboratorio_id: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    if usuario_logado:
+        query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
+        result = db.execute(query)
+        laboratorio_del: Laboratorio = result.scalars().unique().one_or_none()
+
+        if laboratorio_del:
+            
+            db.delete(laboratorio_del)
+            db.commit()
+            
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        
+        else:
+            raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        
+
+############################### End Points de membros do laboratorio #############################
+
 #POST member in laboratory
 @router.post('/addMember', status_code=status.HTTP_201_CREATED)
 async def post_member(user: LaboratorioSchemaAddMember , db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
@@ -188,24 +185,7 @@ async def delete_member_laboratory(
             raise HTTPException(detail="Membro não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
 
-#DELETE laboratorio
-@router.delete('/{laboratorio_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_laboratorio(laboratorio_id: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    if usuario_logado:
-        query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
-        result = db.execute(query)
-        laboratorio_del: Laboratorio = result.scalars().unique().one_or_none()
-
-        if laboratorio_del:
-            
-            db.delete(laboratorio_del)
-            db.commit()
-            
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
-        
-        else:
-            raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
-        
+############################### End Points de permissão do laboratorio #############################
 
 @router.post("/addPerm", response_model=PermissaoLaboratorioResponse)
 def create_permissao_laboratorio(
@@ -237,3 +217,31 @@ def create_permissao_laboratorio(
     db.add(db_laboratorio)
     db.commit()
     return db_permissao_laboratorio
+
+
+## Upgrade permission laboratorio
+@router.post('/upPermission', response_model=LaboratorioSchema, status_code=status.HTTP_202_ACCEPTED)
+def update_perm(
+    value: PermissaoLaboratorioUp,
+    db: Session = Depends(get_session)
+):
+    # Verifica se a permissão existe
+    db_permissao = db.query(Permissao).filter(Permissao.id == value.perm_id).first()
+    if db_permissao is None:
+        raise HTTPException(status_code=404, detail="Permissao not found")
+
+    # Verifica se o laboratório existe
+    query = select(Laboratorio).filter(Laboratorio.id == value.id_lab)
+    result = db.execute(query)
+    laboratorio_up: Laboratorio = result.scalars().unique().one_or_none()
+    if laboratorio_up is None:
+        raise HTTPException(status_code=404, detail="Laboratorio not found")
+    
+    # Verifica se já existe uma permissão de laboratório para o usuário e laboratório
+    for perm in laboratorio_up.lista_perm:
+        if perm.id == value.id:
+            perm.perm_id = value.perm_id
+    
+    db.add(laboratorio_up)
+    db.commit()
+    return laboratorio_up

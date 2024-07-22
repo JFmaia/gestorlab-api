@@ -3,6 +3,7 @@ from pydantic import BaseModel, EmailStr, UUID4
 from datetime import datetime
 from .usuario_schema import UsuarioSchemaBase
 from .projeto_schema import ProjetoSchema
+from .pending_schema import PendingSchema
 
 class PermissaoLaboratorioResponse(BaseModel):
     id: UUID4
@@ -29,6 +30,7 @@ class LaboratorioSchema(BaseModel):
     membros: Optional[List[UsuarioSchemaBase]] = None
     projetos: Optional[List[ProjetoSchema]] = None
     lista_perm: Optional[List[PermissaoLaboratorioResponse]] = None
+    lista_acess: Optional[List[PendingSchema]] = None
 
     class Config:
         from_attributes = True
