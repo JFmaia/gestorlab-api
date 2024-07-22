@@ -38,3 +38,10 @@ laboratorio_permission_association = Table(
     Column('laboratorio_id', UUIDType(binary=False), ForeignKey('laboratorios.id')),
     Column('permissao_laboratorio_id', UUIDType(binary=False), ForeignKey('permissao_laboratorio.id'))
 )
+
+laboratorio_pending_association = Table(
+    'laboratorio_pending',
+    settings.DBBaseModel.metadata,
+    Column('laboratorio_id', UUIDType(binary=False), ForeignKey('laboratorios.id')),
+    Column('pending_id', UUIDType(binary=False), ForeignKey('pendings.id'))
+)

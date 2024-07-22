@@ -12,6 +12,7 @@ from models.permissao import Permissao
 from models.pending import Pending
 from models.genero import Genero
 from schemas.usuario_schema import UsuarioSchemaBase, UsuarioSchemaCreate, UsuarioSchemaUp, UsuarioSchemaLaboratoriosAndProjetos
+from schemas.pending_schema import PendingSchema
 from core.deps import get_current_user, get_session,process_image
 from core.security import gerar_hash_senha
 from core.auth import autenticar, criar_token_acesso
@@ -197,3 +198,33 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db=Depends(get
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Dados de acesso incorretos.')
     
     return JSONResponse(content={"access_token": criar_token_acesso(sub=usuario.id), "token_type":"bearer"}, status_code=status.HTTP_200_OK)
+
+
+############################### Pedidos de acesso #############################
+
+#POST Pedido de acesso ao laboratorio
+@router.post('/requestAcessLab', status_code=status.HTTP_201_CREATED)
+async def post_pending_laboratory(
+    pending: PendingSchema, 
+    usuario_logado: Usuario = Depends(get_current_user), 
+    db: Session = Depends(get_session)
+):
+    query = select(Laboratorio).filter(Laboratorio.id == pending.id_lab)
+    result = db.execute(query)
+    laboratorio: Usuario = result.scalars().unique().one_or_none()
+
+    if laboratorio is None:
+        raise HTTPException(detail="Laboratório não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+    
+    for item in laboratorio.lista_acess:
+        if item.id_user == pending.id_user:
+            raise HTTPException(detail="Já existe um pedido seu nesse laboratório", status_code=status.HTTP_406_NOT_ACCEPTABLE)
+        
+    novo_pedido: Pending = Pending(
+        id_user= pending.id_user,
+        id_lab= pending.id_lab
+    )
+
+    laboratorio.lista_acess.append(novo_pedido)
+    db.add(laboratorio)
+    db.commit()
