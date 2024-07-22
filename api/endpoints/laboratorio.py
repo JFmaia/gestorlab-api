@@ -8,8 +8,10 @@ from sqlalchemy.orm import Session
 from models.associetions import usuario_laboratorio_association
 from models.laboratorio import Laboratorio
 from models.usuario import Usuario
-from schemas.laboratorio_schema import LaboratorioSchema, LaboratorioSchemaCreate, LaboratorioSchemaUp,  LaboratorioSchemaAddMember
-from core.deps import get_session, get_current_user
+from models.permissao import Permissao
+from models.permissao_lab import PermissaoLaboratorio
+from schemas.laboratorio_schema import LaboratorioSchema, LaboratorioSchemaCreate, LaboratorioSchemaUp,  LaboratorioSchemaAddMember, PermissaoLaboratorioCreate, PermissaoLaboratorioResponse, PermissaoLaboratorioUp
+from core.deps import get_session, get_current_user, process_image
 from datetime import datetime
 
 router = APIRouter()
@@ -22,6 +24,10 @@ async def post_laboratorio(
     db= Depends(get_session)
 ):
     
+    processed_image = None
+    if laboratorio.image:
+        processed_image = process_image(laboratorio.image)
+
     novo_laboratorio: Laboratorio = Laboratorio(
         coordenador_id= usuario_logado.id,
         nome = laboratorio.nome,
@@ -29,6 +35,7 @@ async def post_laboratorio(
         template= laboratorio.template,
         descricao= laboratorio.descricao,
         email= laboratorio.email,
+        image= processed_image
     )
 
     db.add(novo_laboratorio)
@@ -76,6 +83,8 @@ async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp,
                 laboratorio_up.template = laboratorio.template
             if laboratorio.email:
                 laboratorio_up.email= laboratorio.email
+            if laboratorio.image:
+                laboratorio_up.image = process_image(laboratorio.image)
             
             laboratorio_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
@@ -86,6 +95,33 @@ async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp,
         
         else:
             raise HTTPException(detail="laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+
+## Upgrade permission laboratorio
+@router.post('/upPermission', response_model=LaboratorioSchema, status_code=status.HTTP_202_ACCEPTED)
+def update_perm(
+    value: PermissaoLaboratorioUp,
+    db: Session = Depends(get_session)
+):
+    # Verifica se a permissão existe
+    db_permissao = db.query(Permissao).filter(Permissao.id == value.perm_id).first()
+    if db_permissao is None:
+        raise HTTPException(status_code=404, detail="Permissao not found")
+
+    # Verifica se o laboratório existe
+    query = select(Laboratorio).filter(Laboratorio.id == value.id_lab)
+    result = db.execute(query)
+    laboratorio_up: Laboratorio = result.scalars().unique().one_or_none()
+    if laboratorio_up is None:
+        raise HTTPException(status_code=404, detail="Laboratorio not found")
+    
+    # Verifica se já existe uma permissão de laboratório para o usuário e laboratório
+    for perm in laboratorio_up.lista_perm:
+        if perm.id == value.id:
+            perm.perm_id = value.perm_id
+    
+    db.add(laboratorio_up)
+    db.commit()
+    return laboratorio_up
         
 #POST member in laboratory
 @router.post('/addMember', status_code=status.HTTP_201_CREATED)
@@ -169,3 +205,35 @@ async def delete_laboratorio(laboratorio_id: str, db: Session = Depends(get_sess
         
         else:
             raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+        
+
+@router.post("/addPerm", response_model=PermissaoLaboratorioResponse)
+def create_permissao_laboratorio(
+    permissao_laboratorio: PermissaoLaboratorioCreate,
+    db: Session = Depends(get_session)
+):
+    # Verifica se a permissão existe
+    db_permissao = db.query(Permissao).filter(Permissao.id == permissao_laboratorio.perm_id).first()
+    if db_permissao is None:
+        raise HTTPException(status_code=404, detail="Permissao not found")
+
+    # Verifica se o laboratório existe
+    db_laboratorio = db.query(Laboratorio).filter(Laboratorio.id == permissao_laboratorio.id_lab).first()
+    if db_laboratorio is None:
+        raise HTTPException(status_code=404, detail="Laboratorio not found")
+    
+    # Verifica se já existe uma permissão de laboratório para o usuário e laboratório
+    for perm in db_laboratorio.lista_perm:
+        if perm.id_user == permissao_laboratorio.id_user:
+            raise HTTPException(status_code=400, detail="Esse usuário já tem permissão no laboratório!")
+    
+    # Cria a nova permissão de laboratório
+    db_permissao_laboratorio = PermissaoLaboratorio(
+        id_user=permissao_laboratorio.id_user,
+        id_lab=permissao_laboratorio.id_lab,
+        perm_id=permissao_laboratorio.perm_id
+    )
+    db_laboratorio.lista_perm.append(db_permissao_laboratorio)
+    db.add(db_laboratorio)
+    db.commit()
+    return db_permissao_laboratorio
