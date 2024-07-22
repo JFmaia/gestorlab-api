@@ -11,7 +11,7 @@ from models.usuario import Usuario
 from models.permissao import Permissao
 from models.permissao_lab import PermissaoLaboratorio
 from schemas.laboratorio_schema import LaboratorioSchema, LaboratorioSchemaCreate, LaboratorioSchemaUp,  LaboratorioSchemaAddMember, PermissaoLaboratorioCreate, PermissaoLaboratorioResponse, PermissaoLaboratorioUp
-from core.deps import get_session, get_current_user
+from core.deps import get_session, get_current_user, process_image
 from datetime import datetime
 
 router = APIRouter()
@@ -24,6 +24,10 @@ async def post_laboratorio(
     db= Depends(get_session)
 ):
     
+    processed_image = None
+    if laboratorio.image:
+        processed_image = process_image(laboratorio.image)
+
     novo_laboratorio: Laboratorio = Laboratorio(
         coordenador_id= usuario_logado.id,
         nome = laboratorio.nome,
@@ -31,6 +35,7 @@ async def post_laboratorio(
         template= laboratorio.template,
         descricao= laboratorio.descricao,
         email= laboratorio.email,
+        image= processed_image
     )
 
     db.add(novo_laboratorio)
@@ -78,6 +83,8 @@ async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp,
                 laboratorio_up.template = laboratorio.template
             if laboratorio.email:
                 laboratorio_up.email= laboratorio.email
+            if laboratorio.image:
+                laboratorio_up.image = process_image(laboratorio.image)
             
             laboratorio_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             

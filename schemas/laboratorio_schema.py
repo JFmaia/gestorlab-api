@@ -22,6 +22,7 @@ class LaboratorioSchema(BaseModel):
     sobre: str
     template: int
     descricao: str
+    image: Optional[str] = None
     email: EmailStr
     data_inicial: Optional[datetime] = None 
     data_up: Optional[datetime] = None
@@ -38,6 +39,7 @@ class LaboratorioSchemaCreate(BaseModel):
     sobre: str
     template: int
     email: EmailStr
+    image: Optional[str] = None
 
 class LaboratorioSchemaUp(BaseModel):
     nome: Optional[str] = None
@@ -45,6 +47,7 @@ class LaboratorioSchemaUp(BaseModel):
     sobre: Optional[str] = None
     template: Optional[int] = None
     email: Optional[EmailStr] = None
+    image: Optional[str] = None
 
 class LaboratorioSchemaAddMember(BaseModel):
     idLaboratorio: str

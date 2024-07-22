@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Column, ForeignKey, Integer
+from sqlalchemy import String, Column, ForeignKey, Integer, Text
 from sqlalchemy.orm import relationship
 from core.config import settings
 from sqlalchemy_utils import UUIDType
@@ -13,6 +13,7 @@ class Laboratorio(settings.DBBaseModel):
     coordenador_id = Column(UUIDType(binary=False), ForeignKey("usuario.id"), nullable=False)
     nome = Column(String(256), nullable=False)
     sobre = Column(String(5000), nullable=False)
+    image =  Column(Text, nullable=True)
     descricao = Column(String(256), nullable=True)
     email = Column(String(256), unique=True, nullable=True)
     data_inicial = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
