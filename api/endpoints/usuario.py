@@ -1,5 +1,5 @@
 from typing import List
-
+import uuid
 from fastapi import APIRouter, status, Depends, HTTPException, Response
 from fastapi.security import  OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
@@ -228,3 +228,22 @@ async def post_pending_laboratory(
     laboratorio.lista_acess.append(novo_pedido)
     db.add(laboratorio)
     db.commit()
+
+@router.delete('/deletePending/{usuario_id}/{id_peding}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_usuario(usuario_id: str, id_peding: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+    query = select(Usuario).filter(Usuario.id == usuario_id)
+    result = db.execute(query)
+    usuario: Usuario = result.scalars().unique().one_or_none()
+
+    if usuario is None:
+        raise HTTPException(detail="Usuário não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+    
+    # Percorre a lista de pendências e remove o item com o id correspondente
+    for index, item in enumerate(usuario.lista_pending):
+        if item.id == uuid.UUID(id_peding):
+            del usuario.lista_pending[index]
+            db.add(usuario)
+            db.commit()
+            return
+
+    raise HTTPException(detail="Pendência não encontrada!", status_code=status.HTTP_404_NOT_FOUND)

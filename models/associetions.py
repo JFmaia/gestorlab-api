@@ -45,3 +45,10 @@ laboratorio_pending_association = Table(
     Column('laboratorio_id', UUIDType(binary=False), ForeignKey('laboratorios.id')),
     Column('pending_id', UUIDType(binary=False), ForeignKey('pendings.id'))
 )
+
+usuario_pending_association = Table(
+    'usuario_pending',
+    settings.DBBaseModel.metadata,
+    Column('usuario_id', UUIDType(binary=False), ForeignKey('usuario.id')),
+    Column('pending_id', UUIDType(binary=False), ForeignKey('pendings.id'))
+)

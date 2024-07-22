@@ -9,7 +9,9 @@ from models.associetions import usuario_laboratorio_association
 from models.laboratorio import Laboratorio
 from models.usuario import Usuario
 from models.permissao import Permissao
+from models.pending import Pending
 from models.permissao_lab import PermissaoLaboratorio
+from schemas.pending_schema import PendingSchema
 from schemas.laboratorio_schema import LaboratorioSchema, LaboratorioSchemaCreate, LaboratorioSchemaUp,  LaboratorioSchemaAddMember, PermissaoLaboratorioCreate, PermissaoLaboratorioResponse, PermissaoLaboratorioUp
 from core.deps import get_session, get_current_user, process_image
 from datetime import datetime
@@ -215,7 +217,7 @@ def create_permissao_laboratorio(
     )
     db_laboratorio.lista_perm.append(db_permissao_laboratorio)
     db.add(db_laboratorio)
-    db.commit()
+    db.commit() 
     return db_permissao_laboratorio
 
 
@@ -245,3 +247,32 @@ def update_perm(
     db.add(laboratorio_up)
     db.commit()
     return laboratorio_up
+
+############################### Pedidos de acesso #############################
+
+#POST Pedido de acesso ao laboratorio
+@router.post('/invitationUser', status_code=status.HTTP_201_CREATED)
+async def post_invitation(
+    pending: PendingSchema, 
+    usuario_logado: Usuario = Depends(get_current_user), 
+    db: Session = Depends(get_session)
+):
+    query = select(Usuario).filter(Usuario.id == pending.id_user)
+    result = db.execute(query)
+    usuario: Usuario = result.scalars().unique().one_or_none()
+
+    if usuario is None:
+        raise HTTPException(detail="Usuário não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+    
+    for item in usuario.lista_pending:
+        if item.id_lab == pending.id_lab:
+            raise HTTPException(detail="Você já convidou este usuário!", status_code=status.HTTP_406_NOT_ACCEPTABLE)
+        
+    novo_pedido: Pending = Pending(
+        id_user= pending.id_user,
+        id_lab= pending.id_lab
+    )
+
+    usuario.lista_pending.append(novo_pedido)
+    db.add(usuario)
+    db.commit()

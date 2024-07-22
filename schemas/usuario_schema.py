@@ -2,6 +2,7 @@
 from typing import Optional, List 
 from pydantic import BaseModel, EmailStr, UUID4
 from schemas.permissao_schema import PermissaoSchema
+from .pending_schema import PendingSchema
 
 class UsuarioSchemaBase(BaseModel):
     id: Optional[UUID4] = None 
@@ -18,6 +19,7 @@ class UsuarioSchemaBase(BaseModel):
     matricula: int
     tel: int
     permissoes: Optional[List[PermissaoSchema]] = None
+    lista_pending: Optional[List[PendingSchema]] = None
 
 class Config:
     from_attributes = True

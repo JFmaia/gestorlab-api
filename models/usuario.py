@@ -4,7 +4,7 @@ from sqlalchemy import BigInteger, String, Column, Boolean, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from core.config import settings
 from sqlalchemy_utils import UUIDType
-from models.associetions import usuario_laboratorio_association, usuario_projeto_association, usuario_permission_association
+from models.associetions import usuario_laboratorio_association, usuario_projeto_association, usuario_permission_association, usuario_pending_association
 class Usuario(settings.DBBaseModel):
     __tablename__ = 'usuario'
 
@@ -33,6 +33,11 @@ class Usuario(settings.DBBaseModel):
     permissoes = relationship(
         "Permissao",
         secondary=usuario_permission_association,
+        lazy="joined"
+    )
+    lista_pending = relationship(
+        "Pending",
+        secondary= usuario_pending_association,
         lazy="joined"
     )
     genero = Column(UUIDType(binary=False), ForeignKey("generos.id"), nullable=False)
