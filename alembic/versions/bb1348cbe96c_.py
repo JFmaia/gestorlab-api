@@ -1,8 +1,8 @@
 """
 
-Revision ID: 6f10e6681cd5
+Revision ID: bb1348cbe96c
 Revises: 
-Create Date: 2024-07-21 10:22:48.892488
+Create Date: 2024-07-23 08:51:10.038636
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlalchemy_utils
 
 
 # revision identifiers, used by Alembic.
-revision: str = '6f10e6681cd5'
+revision: str = 'bb1348cbe96c'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,6 +26,18 @@ def upgrade() -> None:
     sa.Column('title', sa.String(length=256), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('pendings',
+    sa.Column('id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
+    sa.Column('id_user', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=True),
+    sa.Column('id_lab', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=True),
+    sa.Column('id_project', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=True),
+    sa.Column('ativo', sa.Boolean(create_constraint=True), nullable=False),
+    sa.Column('data_create', sa.String(length=256), nullable=False),
+    sa.Column('data_atualizacao', sa.String(length=256), nullable=False),
+    sa.Column('matricula_user', sa.BigInteger(), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('matricula_user')
+    )
     op.create_table('permissao',
     sa.Column('id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
     sa.Column('title', sa.String(length=256), nullable=False),
@@ -36,7 +48,11 @@ def upgrade() -> None:
     sa.Column('id_user', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
     sa.Column('id_lab', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
     sa.Column('perm_id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
-    sa.ForeignKeyConstraint(['perm_id'], ['permissao.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('permissaooflab',
+    sa.Column('id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
+    sa.Column('title', sa.String(length=256), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('usuario',
@@ -64,6 +80,7 @@ def upgrade() -> None:
     sa.Column('coordenador_id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
     sa.Column('nome', sa.String(length=256), nullable=False),
     sa.Column('sobre', sa.String(length=5000), nullable=False),
+    sa.Column('image', sa.Text(), nullable=True),
     sa.Column('descricao', sa.String(length=256), nullable=True),
     sa.Column('email', sa.String(length=256), nullable=True),
     sa.Column('data_inicial', sa.String(length=256), nullable=False),
@@ -73,22 +90,23 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
     )
-    op.create_table('pendings',
-    sa.Column('id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
-    sa.Column('id_user', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=False),
-    sa.Column('ativo', sa.Boolean(create_constraint=True), nullable=False),
-    sa.Column('data_create', sa.String(length=256), nullable=False),
-    sa.Column('data_atualizacao', sa.String(length=256), nullable=False),
-    sa.Column('matricula_user', sa.BigInteger(), nullable=False),
-    sa.ForeignKeyConstraint(['id_user'], ['usuario.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('matricula_user')
+    op.create_table('usuario_pending',
+    sa.Column('usuario_id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=True),
+    sa.Column('pending_id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=True),
+    sa.ForeignKeyConstraint(['pending_id'], ['pendings.id'], ),
+    sa.ForeignKeyConstraint(['usuario_id'], ['usuario.id'], )
     )
     op.create_table('usuario_permissao',
     sa.Column('usuario_id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=True),
     sa.Column('permissao_id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=True),
     sa.ForeignKeyConstraint(['permissao_id'], ['permissao.id'], ),
     sa.ForeignKeyConstraint(['usuario_id'], ['usuario.id'], )
+    )
+    op.create_table('laboratorio_pending',
+    sa.Column('laboratorio_id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=True),
+    sa.Column('pending_id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=True),
+    sa.ForeignKeyConstraint(['laboratorio_id'], ['laboratorios.id'], ),
+    sa.ForeignKeyConstraint(['pending_id'], ['pendings.id'], )
     )
     op.create_table('laboratorio_permissao',
     sa.Column('laboratorio_id', sqlalchemy_utils.types.uuid.UUIDType(binary=False), nullable=True),
@@ -137,12 +155,15 @@ def downgrade() -> None:
     op.drop_table('usuario_laboratorio')
     op.drop_table('projetos')
     op.drop_table('laboratorio_permissao')
+    op.drop_table('laboratorio_pending')
     op.drop_table('usuario_permissao')
-    op.drop_table('pendings')
+    op.drop_table('usuario_pending')
     op.drop_table('laboratorios')
     op.drop_index(op.f('ix_usuario_email'), table_name='usuario')
     op.drop_table('usuario')
+    op.drop_table('permissaooflab')
     op.drop_table('permissao_laboratorio')
     op.drop_table('permissao')
+    op.drop_table('pendings')
     op.drop_table('generos')
     # ### end Alembic commands ###

@@ -20,3 +20,4 @@ class PendingAccepted(BaseModel):
     id_lab: Optional[UUID4] = None
     id_project: Optional[UUID4] = None
     id_perm: Optional[UUID4] = None
+    list_permissoes: Optional[List[UUID4]] = None
