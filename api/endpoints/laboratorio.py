@@ -9,6 +9,7 @@ from models.associetions import usuario_laboratorio_association
 from models.laboratorio import Laboratorio
 from models.usuario import Usuario
 from models.permissao import Permissao
+from models.permissaoLab import PermissaoOfLab
 from models.pending import Pending
 from models.permissao_lab import PermissaoLaboratorio
 from schemas.pending_schema import PendingSchema
@@ -195,14 +196,14 @@ def create_permissao_laboratorio(
     db: Session = Depends(get_session)
 ):
     # Verifica se a permissão existe
-    db_permissao = db.query(Permissao).filter(Permissao.id == permissao_laboratorio.perm_id).first()
+    db_permissao = db.query(PermissaoOfLab).filter(PermissaoOfLab.id == permissao_laboratorio.perm_id).first()
     if db_permissao is None:
-        raise HTTPException(status_code=404, detail="Permissao not found")
+        raise HTTPException(status_code=404, detail="Permissão encontrada")
 
     # Verifica se o laboratório existe
     db_laboratorio = db.query(Laboratorio).filter(Laboratorio.id == permissao_laboratorio.id_lab).first()
     if db_laboratorio is None:
-        raise HTTPException(status_code=404, detail="Laboratorio not found")
+        raise HTTPException(status_code=404, detail="Laboratorio não encontrado")
     
     # Verifica se já existe uma permissão de laboratório para o usuário e laboratório
     for perm in db_laboratorio.lista_perm:
