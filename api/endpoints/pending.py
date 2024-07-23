@@ -15,7 +15,7 @@ router = APIRouter()
 #GET User Pendentes
 @router.get('/', response_model= List[PendingSchema])
 async def get_pending(db: Session = Depends(get_session)):
-  query = select(Pending)
+  query = select(Pending).filter(Pending.ativo == True)
   result = db.execute(query)
   pendings: List[Pending] = result.scalars().unique().all()
 
@@ -25,7 +25,6 @@ async def get_pending(db: Session = Depends(get_session)):
 @router.post('/', status_code=status.HTTP_201_CREATED, response_model=PendingSchema)
 async def post_pending(
     pending: PendingSchema, 
-    usuario_logado: Usuario = Depends(get_current_user), 
     db: Session = Depends(get_session)
 ):
     novo_pedido: Pending = Pending(
