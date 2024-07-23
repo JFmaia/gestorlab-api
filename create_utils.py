@@ -1,5 +1,6 @@
 from core.database import Session
 from models.permissao import Permissao
+from models.permissaoLab import PermissaoOfLab
 from models.genero import Genero
 from core.security import gerar_hash_senha
 from sqlalchemy.future import  select
@@ -17,14 +18,33 @@ PASSWORD_USER: str = os.getenv('PASSWORD_USER')
 
 def create_permissions():
     """Função para criar quatro permissões na tabela de permissão"""
-    session = Session()
     permissions = ["Admin", "Coordenador", "Membro"]
-    existing_permissions = session.query(Permissao).filter(Permissao.title.in_(permissions)).all()
-    permissions_to_create = [perm for perm in permissions if perm not in [p.title for p in existing_permissions]]
-    new_permissions = [Permissao(title=perm) for perm in permissions_to_create]
-    session.add_all(new_permissions)
-    session.commit()
-    session.close()
+    
+    with Session() as session:
+        existing_permissions = session.query(Permissao).filter(Permissao.title.in_(permissions)).all()
+        existing_titles = {p.title for p in existing_permissions}
+        
+        permissions_to_create = [perm for perm in permissions if perm not in existing_titles]
+        new_permissions = [Permissao(title=perm) for perm in permissions_to_create]
+        
+        if new_permissions:
+            session.add_all(new_permissions)
+            session.commit()
+
+def create_permissions_of_lab():
+    """Função para criar quatro permissões na tabela de permissão"""
+    permissions = ["Coolaborador", "Membro", "Supervisor"]
+    
+    with Session() as session:
+        existing_permissions = session.query(PermissaoOfLab).filter(PermissaoOfLab.title.in_(permissions)).all()
+        existing_titles = {p.title for p in existing_permissions}
+        
+        permissions_to_create = [perm for perm in permissions if perm not in existing_titles]
+        new_permissions = [PermissaoOfLab(title=perm) for perm in permissions_to_create]
+        
+        if new_permissions:
+            session.add_all(new_permissions)
+            session.commit()
 
 def create_generos():
     session = Session()
@@ -40,8 +60,16 @@ def create_user_admin():
     session = Session()
     genero = session.query(Genero).first()
 
+    query= select(Permissao).filter(Permissao.title == "Admin")
+    result= session.execute(query)
+    permission: Permissao = result.scalars().unique().one_or_none()
+
     if genero is None:
         print("Erro: Nenhum gênero encontrado.")
+        return
+    
+    if permission is None:
+        print("Erro: Nenhuma permissão encontrada.")
         return
     
     query= select(Usuario).filter(Usuario.email == EMAIL_USER)
@@ -60,6 +88,7 @@ def create_user_admin():
         segundo_nome="Admin",
         data_nascimento="00/00/0000",
         email=EMAIL_USER,
+        permissoes=[permission],
         genero=genero.id,
         matricula=0000000000,
         tel=00000000000,
@@ -71,6 +100,8 @@ def create_user_admin():
 if __name__ == "__main__":
     create_permissions()
     print("Permissões criadas com sucesso!")
+    create_permissions_of_lab()
+    print("Permissões de laboratorio criadas com sucesso!")
     create_generos()
     print("Gêneros criados com sucesso!")
     create_user_admin()
