@@ -29,7 +29,14 @@ async def post_laboratorio(
     usuario_logado: Usuario = Depends(get_current_user), 
     db= Depends(get_session)
 ):
-    
+    query = select(Usuario).filter(Usuario.id == usuario_logado.id)
+    result = db.execute(query)
+    usuario_coord: Usuario= result.scalars().unique().one_or_none()
+
+    queryPerm = select(PermissaoOfLab).filter(PermissaoOfLab.title == 'Coordenador')
+    result = db.execute(queryPerm)
+    permition_coord: PermissaoOfLab = result.scalars().unique().one_or_none()
+
     processed_image = None
     if laboratorio.image:
         processed_image = process_image(laboratorio.image)
@@ -44,10 +51,26 @@ async def post_laboratorio(
         image= processed_image
     )
 
+    novo_laboratorio.membros.append(usuario_coord)
+
     db.add(novo_laboratorio)
     db.commit()
 
-    return novo_laboratorio
+    queryLab = select(Laboratorio).filter(Laboratorio.coordenador_id == usuario_logado.id)
+    result = db.execute(queryLab)
+    laboratorio: Laboratorio = result.scalars().unique().one_or_none()
+
+    permissao_laboratorio = PermissaoLaboratorio(
+        id_user= usuario_logado.id,
+        id_lab= laboratorio.id,
+        perm_id= permition_coord.id 
+    )
+
+    laboratorio.lista_perm.append(permissao_laboratorio)
+    db.add(laboratorio)
+    db.commit() 
+
+    return laboratorio
 
 #GET Laboratorios
 @router.get('/', response_model= List[LaboratorioSchema], status_code=status.HTTP_200_OK)
