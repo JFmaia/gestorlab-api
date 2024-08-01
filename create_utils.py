@@ -33,7 +33,7 @@ def create_permissions():
 
 def create_permissions_of_lab():
     """Função para criar quatro permissões na tabela de permissão"""
-    permissions = ["Coolaborador", "Membro", "Supervisor"]
+    permissions = ["Colaborador", "Membro", "Supervisor","Coordenador"]
     
     with Session() as session:
         existing_permissions = session.query(PermissaoOfLab).filter(PermissaoOfLab.title.in_(permissions)).all()
