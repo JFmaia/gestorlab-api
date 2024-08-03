@@ -48,3 +48,10 @@ class UsuarioSchemaUp(UsuarioSchemaBase):
     tel: Optional[int]
     list_permissoes: Optional[List[UUID4]] = None
     image: Optional[str] = None
+
+class SendEmail(BaseModel):
+    email: str
+
+class RecoveryPassword(BaseModel):
+    id_user: UUID4
+    senha: str
