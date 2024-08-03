@@ -1,26 +1,42 @@
-from typing import List
 import uuid
+from typing import List
+from datetime import datetime
+import os
+from dotenv import load_dotenv
+import smtplib
+
 from fastapi import APIRouter, status, Depends, HTTPException, Response
 from fastapi.security import  OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 from sqlalchemy.future import select 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import selectinload
+
 from models.usuario import Usuario
 from models.laboratorio import Laboratorio
 from models.permissao import Permissao
 from models.pending import Pending
 from models.genero import Genero
-from schemas.usuario_schema import UsuarioSchemaBase, UsuarioSchemaCreate, UsuarioSchemaUp, UsuarioSchemaLaboratoriosAndProjetos
+
+from schemas.usuario_schema import UsuarioSchemaBase, UsuarioSchemaCreate, UsuarioSchemaUp, UsuarioSchemaLaboratoriosAndProjetos, SendEmail, RecoveryPassword
 from schemas.pending_schema import PendingSchema
+
 from core.deps import get_current_user, get_session,process_image
 from core.security import gerar_hash_senha
 from core.auth import autenticar, criar_token_acesso
-from sqlalchemy.orm import selectinload
-from datetime import datetime
 
 
 router = APIRouter()
+
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
+
+SECRET_KEY: str = os.getenv('SECRET_KEY')
 
 # Autenticate
 @router.get('/auth')
@@ -31,6 +47,61 @@ async def auth_user(usuario_logado: Usuario = Depends(get_current_user)):
         headers={"WWW-Authenticate": "Bearer"}
     )
     return credential_exception
+
+@router.post("/sendEmail", status_code=status.HTTP_202_ACCEPTED)
+async def send_reset_email_endpoint(request: SendEmail, db: Session = Depends(get_session)):
+    query = select(Usuario).filter(Usuario.email == request.email)
+    result = db.execute(query)
+    user: Usuario = result.scalars().unique().one_or_none()
+    if user is None:
+        raise HTTPException(detail="Nenhum usuário foi encontrado com esté e-mail!", status_code=status.HTTP_404_NOT_FOUND)
+    try:
+        servidor_email = smtplib.SMTP('smtp.gmail.com', 587)
+        servidor_email.starttls()
+        servidor_email.login('jfmaia.dev@gmail.com', SECRET_KEY)
+
+        remetente = request.email
+        destinatario = request.email
+         # Criar a mensagem MIMEMultipart
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = "GestorLAB- Resete de senha!"
+        msg['From'] = remetente
+        msg['To'] = destinatario
+
+        # Criar a mensagem HTML
+        html = f"""
+        <html>
+        <body>
+            <p>Olá,{user.primeiro_nome + ' ' +  user.segundo_nome}</p>
+            <p>Clique no link abaixo para redefinir sua senha:</p>
+            <a href="http://localhost:5173/passwordRecovery/{user.id}">Redefinir Senha</a>
+            <p>Se você não solicitou a redefinição de senha, ignore este e-mail.</p>
+        </body>
+        </html>
+        """
+        
+        # Anexar a mensagem HTML ao MIMEMultipart
+        part = MIMEText(html, 'html')
+        msg.attach(part)
+
+        servidor_email.sendmail(remetente, destinatario, msg.as_string())
+    except Exception as e:
+        print(f"Erro ao enviar email: {e}")
+    finally:
+        servidor_email.quit()
+    
+## Put password user
+@router.post('/passwordRecovery', status_code=status.HTTP_200_OK)
+async def password_recovery(emailRecovery: RecoveryPassword, db: Session = Depends(get_session) ):
+    query = select(Usuario).filter(Usuario.id == emailRecovery.id_user)
+    result = db.execute(query)
+    user: Usuario = result.scalars().unique().one_or_none()
+    if user is None:
+        raise HTTPException(detail="Nenhum usuário foi encontrado com esté e-mail!", status_code=status.HTTP_404_NOT_FOUND)
+    
+    user.senha = gerar_hash_senha(emailRecovery.senha)
+    db.commit()
+
 
 # GET Logado
 @router.get('/logado', response_model= UsuarioSchemaBase)
