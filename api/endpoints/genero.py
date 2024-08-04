@@ -3,8 +3,11 @@ from fastapi import APIRouter, status, Depends
 
 from sqlalchemy.future import  select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from models.genero import Genero
+
 from schemas.genero_schema import GeneroSchema
+
 from core.deps import get_session, get_current_user
 
 router = APIRouter()

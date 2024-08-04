@@ -1,14 +1,17 @@
 from typing import List
 from fastapi import APIRouter, status, Depends, HTTPException
+from datetime import datetime
 
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from models.pending import Pending
 from models.permissao import Permissao
 from models.usuario import Usuario
-from schemas.pending_schema import PendingSchema, PendingAccepted
+
 from core.deps import get_session, get_current_user
-from datetime import datetime
+
+from schemas.pending_schema import PendingSchema, PendingAccepted
 
 router = APIRouter()
 

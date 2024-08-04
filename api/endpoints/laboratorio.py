@@ -1,10 +1,11 @@
-from typing import List
 import uuid
-
+from typing import List
 from fastapi import APIRouter, status, Depends, HTTPException, Response
+from datetime import datetime
 
 from sqlalchemy.future import  select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from models.associetions import usuario_laboratorio_association
 from models.laboratorio import Laboratorio
 from models.usuario import Usuario
@@ -12,10 +13,12 @@ from models.permissao import Permissao
 from models.permissaoLab import PermissaoOfLab
 from models.pending import Pending
 from models.permissao_lab import PermissaoLaboratorio
+
+from core.deps import get_session, get_current_user, process_image
+
 from schemas.pending_schema import PendingSchema
 from schemas.laboratorio_schema import LaboratorioSchema, LaboratorioSchemaCreate, LaboratorioSchemaUp,  LaboratorioSchemaAddMember, PermissaoLaboratorioCreate, PermissaoLaboratorioResponse, PermissaoLaboratorioUp
-from core.deps import get_session, get_current_user, process_image
-from datetime import datetime
+
 
 router = APIRouter()
 

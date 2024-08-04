@@ -3,10 +3,13 @@ from fastapi import APIRouter, status, Depends
 
 from sqlalchemy.future import  select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from models.permissao import Permissao
 from models.permissaoLab import PermissaoOfLab
+
 from schemas.permissao_schema import PermissaoSchema
-from core.deps import get_session, get_current_user
+
+from core.deps import get_session
 
 router = APIRouter()
 

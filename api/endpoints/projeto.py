@@ -1,14 +1,19 @@
-from typing import List
 import uuid
+from typing import List
+from datetime import datetime
+
 from fastapi import APIRouter, status, Depends, HTTPException, Response
+
 from sqlalchemy.future import  select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from models.projeto import Projeto
 from models.usuario import Usuario
 from models.associetions import usuario_projeto_association
-from schemas.projeto_schema import ProjetoSchema, ProjetoSchemaCreate, ProjetoSchemaUp, ProjetoSchemaAddMember
+
 from core.deps import get_session, get_current_user
-from datetime import datetime
+
+from schemas.projeto_schema import ProjetoSchema, ProjetoSchemaCreate, ProjetoSchemaUp, ProjetoSchemaAddMember
 
 router = APIRouter()
 
