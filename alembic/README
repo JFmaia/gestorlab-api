@@ -7,3 +7,11 @@ Generic single-database configuration.
 ## Aplicar migration
 
 - ``` alembic upgrade head ```
+
+## Limpar o registro do alembic no banco
+
+- para se conectar com bd ```psql -h <host> -U <username> -d <database>```
+
+- para achar ```SELECT * FROM alembic_version;```
+
+- para deletar ```DELETE FROM alembic_version;```

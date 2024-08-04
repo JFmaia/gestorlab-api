@@ -38,7 +38,7 @@ async def post_projeto(
     if(veryfProjeto):
         raise HTTPException(detail="Já existe um projeto com esse nome!!", status_code=status.HTTP_403_FORBIDDEN)
     else:
-        await db.add(novo_projeto)
+        db.add(novo_projeto)
         await db.commit()
         return novo_projeto
 
@@ -110,7 +110,7 @@ async def post_member(data: ProjetoSchemaAddMember, db: AsyncSession = Depends(g
             else:
                 projeto.membros.append(usuario)
 
-                await db.add(projeto)
+                db.add(projeto)
                 await db.commit()
                 return HTTPException(detail="Membro adicionado com sucesso!", status_code=status.HTTP_201_CREATED)
 
@@ -139,7 +139,7 @@ async def delete_member_project(projeto_id: str, member_id: str, db: AsyncSessio
                 usuario_projeto_association.c.projeto_id == projeto_id,
                 usuario_projeto_association.c.usuario_id == member_id
             )
-            await db.execute(delete_stmt)
+            db.execute(delete_stmt)
             await db.commit()
         else:
             raise HTTPException(detail="Membro não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
@@ -153,7 +153,7 @@ async def delete_projeto(projeto_id: str, db: AsyncSession = Depends(get_session
         projeto_del: Projeto = result.scalars().unique().one_or_none()
 
         if projeto_del:
-            await db.delete(projeto_del)
+            db.delete(projeto_del)
             await db.commit()
             return Response(status_code=status.HTTP_204_NO_CONTENT)
         

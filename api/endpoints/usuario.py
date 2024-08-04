@@ -119,7 +119,9 @@ async def post_usuario(usuario: UsuarioSchemaCreate, db: AsyncSession = Depends(
         raise HTTPException(detail="Genero não encontrado", status_code=status.HTTP_404_NOT_FOUND)
 
     # Verificar se a matrícula já existe
-    matricula_existente = await db.execute(select(Usuario).filter(Usuario.matricula == usuario.matricula)).first()
+    query = select(Usuario).filter(Usuario.matricula == usuario.matricula)
+    result = await db.execute(query)
+    matricula_existente = result.scalars().unique().one_or_none()
     if matricula_existente:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Matrícula já existe")
     
@@ -143,7 +145,7 @@ async def post_usuario(usuario: UsuarioSchemaCreate, db: AsyncSession = Depends(
     )
 
     try:
-        await db.add(novo_usuario)
+        db.add(novo_usuario)
         await db.commit()
         await db.refresh(novo_usuario)
 
@@ -154,117 +156,117 @@ async def post_usuario(usuario: UsuarioSchemaCreate, db: AsyncSession = Depends(
 # GET Usuarios
 @router.get('/', response_model=List[UsuarioSchemaBase])
 async def get_usuarios(db: AsyncSession = Depends(get_session)):
-    with db as session:
-        query = select(Usuario)
-        result = await session.execute(query)
-        usuarios: List[UsuarioSchemaBase] = result.scalars().unique().all() 
+    query = select(Usuario)
+    result = await db.execute(query)
+    usuarios: List[UsuarioSchemaBase] = result.scalars().unique().all() 
 
-        return usuarios
+    return usuarios
     
 @router.get('/{usuario_id}', response_model=UsuarioSchemaLaboratoriosAndProjetos, status_code=status.HTTP_200_OK)
 async def get_usuario(usuario_id: str, db: AsyncSession= Depends(get_session)):
-    with db as session:
-        query = select(Usuario).options(selectinload(Usuario.laboratorios), selectinload(Usuario.projetos)).filter(Usuario.id == usuario_id)
-        result = await session.execute(query)
-        usuario = result.scalars().first()
+    query = select(Usuario).options(selectinload(Usuario.laboratorios), selectinload(Usuario.projetos)).filter(Usuario.id == usuario_id)
+    result = await db.execute(query)
+    usuario = result.scalars().first()
 
-        if usuario:
-            return usuario
-        else:
-            raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
+    if usuario:
+        return usuario
+    else:
+        raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
         
 #PUT Usuario
 @router.put('/{usuario_id}', response_model=UsuarioSchemaBase, status_code=status.HTTP_202_ACCEPTED)
 async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db: AsyncSession =Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     if usuario_logado:
         list_aux: List[Permissao] = []
-        with db as session:
-            query= select(Usuario).filter(Usuario.id == usuario_id)
-            result= await session.execute(query)
-            usuario_up: UsuarioSchemaBase = result.scalars().unique().one_or_none()
+        query= select(Usuario).filter(Usuario.id == usuario_id)
+        result= await db.execute(query)
+        usuario_up: UsuarioSchemaBase = result.scalars().unique().one_or_none()
 
-            if usuario_up:
-                if usuario.primeiro_nome:
-                    usuario_up.primeiro_nome = usuario.primeiro_nome
-                if usuario.segundo_nome:
-                    usuario_up.segundo_nome = usuario.segundo_nome
-                if usuario.email:
-                    usuario_up.email = usuario.email
-                if usuario.matricula:
-                    usuario_up.matricula = usuario.matricula
-                if usuario.senha:
-                    usuario_up.senha = gerar_hash_senha(usuario.senha)
-                if usuario.image:
-                    usuario_up.image = process_image(usuario.image)
-                if usuario.data_nascimento:
-                    usuario_up.data_nascimento = usuario.data_nascimento
-                if usuario.genero:
-                    query = select(Genero).filter(Genero.id == usuario.genero)
-                    result = await db.execute(query)
-                    genero: Genero = result.scalars().unique().one_or_none()
-                    
-                    if genero is None:
-                        raise HTTPException(detail="Genero não encontrado", status_code=status.HTTP_404_NOT_FOUND)
-                    else:
-                        usuario_up.genero = genero.id
-                if usuario.list_permissoes:
-                    query= select(Permissao)
-                    result= await db.execute(query)
-                    permissoes: List[Permissao] = result.scalars().unique().all()
+        if usuario_up:
+            if usuario.primeiro_nome:
+                usuario_up.primeiro_nome = usuario.primeiro_nome
+            if usuario.segundo_nome:
+                usuario_up.segundo_nome = usuario.segundo_nome
+            if usuario.email:
+                usuario_up.email = usuario.email
+            if usuario.matricula:
+                usuario_up.matricula = usuario.matricula
+            if usuario.senha:
+                usuario_up.senha = gerar_hash_senha(usuario.senha)
+            if usuario.image:
+                usuario_up.image = process_image(usuario.image)
+            if usuario.data_nascimento:
+                usuario_up.data_nascimento = usuario.data_nascimento
+            if usuario.genero:
+                query = select(Genero).filter(Genero.id == usuario.genero)
+                result = await db.execute(query)
+                genero: Genero = result.scalars().unique().one_or_none()
+                
+                if genero is None:
+                    raise HTTPException(detail="Genero não encontrado", status_code=status.HTTP_404_NOT_FOUND)
+                else:
+                    usuario_up.genero = genero.id
+            if usuario.list_permissoes:
+                query= select(Permissao)
+                result= await db.execute(query)
+                permissoes: List[Permissao] = result.scalars().unique().all()
 
-                    for item in usuario.list_permissoes:
-                        for permissao in permissoes:
-                            if item == permissao.id:
-                                list_aux.append(permissao)
+                for item in usuario.list_permissoes:
+                    for permissao in permissoes:
+                        if item == permissao.id:
+                            list_aux.append(permissao)
 
-                    usuario_up.permissoes.clear()
-                    usuario_up.permissoes = list_aux
-                if usuario.tel:
-                    usuario_up.tel = usuario.tel
+                usuario_up.permissoes.clear()
+                usuario_up.permissoes = list_aux
+            if usuario.tel:
+                usuario_up.tel = usuario.tel
 
-                usuario_up.data_atualizacao = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            usuario_up.data_atualizacao = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                await db.commit()
+            await db.commit()
 
-                return usuario_up
-            else:
-                raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
+            return usuario_up
+        else:
+            raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
         
 
 @router.delete('/{usuario_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_usuario(usuario_id: str, db: AsyncSession =Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     if usuario_logado:
-        with db as session:
-            # Verifica se o usuário é coordenador de algum laboratório
-            query_coordenador = select(Laboratorio).filter(Laboratorio.coordenador_id == usuario_id)
-            result_coordenador = await session.execute(query_coordenador)
-            laboratorios_coordenador: Laboratorio = result_coordenador.scalars().unique().one_or_none()
+        # Verifica se o usuário é coordenador de algum laboratório
+        query_coordenador = select(Laboratorio).filter(Laboratorio.coordenador_id == usuario_id)
+        result_coordenador = await db.execute(query_coordenador)
+        laboratorios_coordenador: Laboratorio = result_coordenador.scalars().unique().one_or_none()
 
-            if laboratorios_coordenador:
-                raise HTTPException(
-                    detail='Para você excluir sua conta, primeiro deve passar os direitos de coordenador para outro membro do laboratório!',
-                    status_code=status.HTTP_400_BAD_REQUEST
-                )
+        if laboratorios_coordenador:
+            raise HTTPException(
+                detail='Para você excluir sua conta, primeiro deve passar os direitos de coordenador para outro membro do laboratório!',
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
 
-            # Se o usuário não for coordenador de nenhum laboratório, exclui o usuário
-            query_usuario = select(Usuario).filter(Usuario.id == usuario_id)
-            result_usuario = await session.execute(query_usuario)
-            usuario_del: Usuario = result_usuario.scalars().unique().one_or_none()
+        # Se o usuário não for coordenador de nenhum laboratório, exclui o usuário
+        query_usuario = select(Usuario).filter(Usuario.id == usuario_id)
+        result_usuario = await db.execute(query_usuario)
+        usuario_del: Usuario = result_usuario.scalars().unique().one_or_none()
 
-            if usuario_del:
-                await session.query(Pending).filter(Pending.id_user == usuario_del.id).delete()
-                await session.delete(usuario_del)
-                await session.commit()
+        if usuario_del:
+            query= select(Pending).filter(Pending.id_user == usuario_del.id)
+            result= await db.execute(query)
+            peding: Pending = result.scalars().unique().one_or_none()
+            
+            db.delete(peding)
+            db.delete(usuario_del)
+            await db.commit()
 
-                return Response(status_code=status.HTTP_204_NO_CONTENT)
-            else:
-                raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        else:
+            raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
 
 #POST Login
 @router.post('/login')
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession=Depends(get_session)):
-    usuario = autenticar(email=form_data.username, senha=form_data.password, db=db)
-
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession =Depends(get_session)):
+    usuario = await autenticar(email=form_data.username, senha=form_data.password, db=db)
+    print(usuario.id)
     if not usuario:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Dados de acesso incorretos.')
     
@@ -297,7 +299,7 @@ async def post_pending_laboratory(
     )
 
     laboratorio.lista_acess.append(novo_pedido)
-    await db.add(laboratorio)
+    db.add(laboratorio)
     await db.commit()
 
 @router.delete('/deletePending/{usuario_id}/{id_peding}', status_code=status.HTTP_204_NO_CONTENT)
@@ -313,7 +315,7 @@ async def delete_usuario(usuario_id: str, id_peding: str, db: AsyncSession = Dep
     for index, item in enumerate(usuario.lista_pending):
         if item.id == uuid.UUID(id_peding):
             del usuario.lista_pending[index]
-            await db.add(usuario)
+            db.add(usuario)
             await db.commit()
             return
 

@@ -56,7 +56,7 @@ async def post_laboratorio(
 
     novo_laboratorio.membros.append(usuario_coord)
 
-    await db.add(novo_laboratorio)
+    db.add(novo_laboratorio)
     await db.commit()
 
     queryLab = select(Laboratorio).filter(Laboratorio.coordenador_id == usuario_logado.id)
@@ -70,7 +70,7 @@ async def post_laboratorio(
     )
 
     laboratorio.lista_perm.append(permissao_laboratorio)
-    await db.add(laboratorio)
+    db.add(laboratorio)
     await db.commit() 
 
     return laboratorio
@@ -137,7 +137,7 @@ async def delete_laboratorio(laboratorio_id: str, db:AsyncSession = Depends(get_
 
         if laboratorio_del:
             
-            await db.delete(laboratorio_del)
+            db.delete(laboratorio_del)
             await db.commit()
             
             return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -173,7 +173,7 @@ async def post_member(user: LaboratorioSchemaAddMember , db:AsyncSession = Depen
             else:
                 laboratorio.membros.append(usuario)
 
-                await db.add(laboratorio)
+                db.add(laboratorio)
                 await db.commit()
                 return {"detail": "Membro adicionado com sucesso com sucesso!"}
 
@@ -207,7 +207,7 @@ async def delete_member_laboratory(
                 usuario_laboratorio_association.c.laboratorio_id == laboratorio_id,
                 usuario_laboratorio_association.c.usuario_id == member_uuid
             )
-            await db.execute(delete_stmt)
+            db.execute(delete_stmt)
             await db.commit()
         else:
             raise HTTPException(detail="Membro não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
@@ -221,12 +221,16 @@ async def create_permissao_laboratorio(
     db:AsyncSession = Depends(get_session)
 ):
     # Verifica se a permissão existe
-    db_permissao = await db.query(PermissaoOfLab).filter(PermissaoOfLab.id == permissao_laboratorio.perm_id).first()
+    query = select(PermissaoOfLab).filter(PermissaoOfLab.id == permissao_laboratorio.perm_id)
+    result = await db.execute(query)
+    db_permissao: PermissaoOfLab = result.scalars().unique().one_or_none()
     if db_permissao is None:
         raise HTTPException(status_code=404, detail="Permissão encontrada")
 
     # Verifica se o laboratório existe
-    db_laboratorio = await db.query(Laboratorio).filter(Laboratorio.id == permissao_laboratorio.id_lab).first()
+    query = select(Laboratorio).filter(Laboratorio.id == permissao_laboratorio.id_lab)
+    result = await db.execute(query)
+    db_laboratorio: Laboratorio = result.scalars().unique().one_or_none()
     if db_laboratorio is None:
         raise HTTPException(status_code=404, detail="Laboratorio não encontrado")
     
@@ -242,7 +246,7 @@ async def create_permissao_laboratorio(
         perm_id=permissao_laboratorio.perm_id
     )
     db_laboratorio.lista_perm.append(db_permissao_laboratorio)
-    await db.add(db_laboratorio)
+    db.add(db_laboratorio)
     await db.commit() 
     return db_permissao_laboratorio
 
@@ -254,23 +258,25 @@ async def update_perm(
     db:AsyncSession = Depends(get_session)
 ):
     # Verifica se a permissão existe
-    db_permissao = await db.query(Permissao).filter(Permissao.id == value.perm_id).first()
+    query = select(Permissao).filter(Permissao.id == value.perm_id)
+    result = await db.execute(query)
+    db_permissao: Permissao = result.scalars().unique().one_or_none()
     if db_permissao is None:
-        raise HTTPException(status_code=404, detail="Permissao not found")
+        raise HTTPException(status_code=404, detail="Permissao não encontrada")
 
     # Verifica se o laboratório existe
     query = select(Laboratorio).filter(Laboratorio.id == value.id_lab)
     result = await db.execute(query)
     laboratorio_up: Laboratorio = result.scalars().unique().one_or_none()
     if laboratorio_up is None:
-        raise HTTPException(status_code=404, detail="Laboratorio not found")
+        raise HTTPException(status_code=404, detail="Laboratorio não encontrado")
     
     # Verifica se já existe uma permissão de laboratório para o usuário e laboratório
     for perm in laboratorio_up.lista_perm:
         if perm.id == value.id:
             perm.perm_id = value.perm_id
     
-    await db.add(laboratorio_up)
+    db.add(laboratorio_up)
     await db.commit()
     return laboratorio_up
 
@@ -300,5 +306,5 @@ async def post_invitation(
     )
 
     usuario.lista_pending.append(novo_pedido)
-    await db.add(usuario)
+    db.add(usuario)
     await db.commit()

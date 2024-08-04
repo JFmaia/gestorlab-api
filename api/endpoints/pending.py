@@ -42,7 +42,7 @@ async def post_pending(
     if(veryUsuario):
         raise HTTPException(detail="Já existe um pedido desse usuario!", status_code=status.HTTP_403_FORBIDDEN)
     else:
-        await db.add(novo_pedido)
+        db.add(novo_pedido)
         await db.commit()
         return novo_pedido
 
