@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer
 
 from sqlalchemy.future import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt
 
 from models.__all_models import Usuario
@@ -18,9 +18,9 @@ oauth2_schema = OAuth2PasswordBearer (
     tokenUrl=f"{settings.API_V1_STR}/usuarios/login"
 )
 
-def autenticar(email: EmailStr, senha:str, db: Session) -> Optional[Usuario]:
+async def autenticar(email: EmailStr, senha:str, db: AsyncSession) -> Optional[Usuario]:
     query = select(Usuario).filter(Usuario.ativo == True).filter(Usuario.email == email)
-    result = db.execute(query)
+    result = await db.execute(query)
     usuario: Usuario = result.scalars().unique().one_or_none()
 
     if not usuario:

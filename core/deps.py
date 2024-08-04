@@ -14,16 +14,17 @@ from core.database import Session
 from core.auth import oauth2_schema
 from core.config import settings
 from models.usuario import Usuario
+from sqlalchemy.ext.asyncio import AsyncSession
 
 class TokenData(BaseModel):
     username: Optional[str] = None
 
-def get_session():
+async def get_session():
+    session: AsyncSession = Session()
     try:
-        db = Session()
-        yield db
+        yield session
     finally:
-        db.close()
+        await session.close()
 
 
 ## Função que descobre quem é o usuario pelo token
@@ -48,7 +49,7 @@ async def get_current_user(db: Session = Depends(get_session), token: str = Depe
         raise credential_exception
     
     query = select(Usuario).filter(Usuario.id == token_data.username)
-    result = db.execute(query)
+    result = await db.execute(query)
     usuario: Usuario = result.scalars().unique().one_or_none()
     if usuario is None:
         raise credential_exception

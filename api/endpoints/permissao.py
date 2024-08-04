@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, status, Depends
 
 from sqlalchemy.future import  select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from models.permissao import Permissao
 from models.permissaoLab import PermissaoOfLab
 from schemas.permissao_schema import PermissaoSchema
@@ -12,18 +12,18 @@ router = APIRouter()
 
 #GET Permissões
 @router.get('/', response_model= List[PermissaoSchema], status_code=status.HTTP_200_OK)
-async def get_permissoes(db: Session = Depends(get_session)):
+async def get_permissoes(db: AsyncSession = Depends(get_session)):
   query = select(Permissao)
-  result = db.execute(query)
+  result = await db.execute(query)
   permissaos: List[Permissao] = result.scalars().unique().all()
 
   return permissaos
 
 #GET Permissões
 @router.get('/permLab', response_model= List[PermissaoSchema], status_code=status.HTTP_200_OK)
-async def get_permissoes(db: Session = Depends(get_session)):
+async def get_permissoes(db: AsyncSession = Depends(get_session)):
   query = select(PermissaoOfLab)
-  result = db.execute(query)
+  result = await db.execute(query)
   permissaos: List[PermissaoOfLab] = result.scalars().unique().all()
 
   return permissaos
