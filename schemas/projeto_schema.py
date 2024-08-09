@@ -7,6 +7,7 @@ class ProjetoSchema(BaseModel):
     id: Optional[UUID4] = None 
     titulo: str
     descricao: str
+    lab_creator: Optional[UUID4] = None 
     image: Optional[str] = None
     autor_id: Optional[UUID4] = None 
     data_inicial: datetime

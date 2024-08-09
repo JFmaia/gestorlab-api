@@ -83,6 +83,8 @@ async def put_projeto(projeto_id: str, projeto: ProjetoSchemaUp, db: AsyncSessio
                 projeto_up.titulo = projeto.titulo
             if projeto.descricao:
                 projeto_up.descricao = projeto.descricao
+            if projeto.image:
+                projeto_up.image = process_image(projeto.image)
                 
             projeto_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
