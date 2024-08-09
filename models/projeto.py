@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Column, ForeignKey
+from sqlalchemy import String, Column, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from core.config import settings
 from sqlalchemy_utils import UUIDType
@@ -10,6 +10,7 @@ class Projeto(settings.DBBaseModel):
 
     id = Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
     titulo = Column(String(256), unique=True, nullable=False)
+    image =  Column(Text, nullable=True)
     descricao = Column(String(5000), nullable=True)
     lab_creator= Column(UUIDType(binary=False), ForeignKey("laboratorios.id"), nullable=False)
     autor_id = Column(UUIDType(binary=False), ForeignKey("usuario.id"), nullable=False)
