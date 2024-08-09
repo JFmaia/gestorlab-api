@@ -136,10 +136,8 @@ async def delete_laboratorio(laboratorio_id: str, db:AsyncSession = Depends(get_
         laboratorio_del: Laboratorio = result.scalars().unique().one_or_none()
 
         if laboratorio_del:
-            
-            db.delete(laboratorio_del)
+            await db.delete(laboratorio_del)
             await db.commit()
-            
             return Response(status_code=status.HTTP_204_NO_CONTENT)
         
         else:

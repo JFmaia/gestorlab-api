@@ -254,8 +254,8 @@ async def delete_usuario(usuario_id: str, db: AsyncSession =Depends(get_session)
             result= await db.execute(query)
             peding: Pending = result.scalars().unique().one_or_none()
             
-            db.delete(peding)
-            db.delete(usuario_del)
+            await db.delete(peding)
+            await db.delete(usuario_del)
             await db.commit()
 
             return Response(status_code=status.HTTP_204_NO_CONTENT)

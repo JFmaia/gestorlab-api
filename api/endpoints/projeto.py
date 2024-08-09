@@ -11,7 +11,7 @@ from models.projeto import Projeto
 from models.usuario import Usuario
 from models.associetions import usuario_projeto_association
 
-from core.deps import get_session, get_current_user
+from core.deps import get_session, get_current_user, process_image
 
 from schemas.projeto_schema import ProjetoSchema, ProjetoSchemaCreate, ProjetoSchemaUp, ProjetoSchemaAddMember
 
@@ -24,11 +24,16 @@ async def post_projeto(
     usuario_logado: Usuario = Depends(get_current_user), 
     db: AsyncSession = Depends(get_session)
 ):
-    novo_projeto: Projeto = Projeto(
+    image_process= None
+    if projeto.image:
+        image_process= process_image(projeto.image)
+
+    novo_projeto: Projeto = Projeto (
         autor_id= usuario_logado.id,
         titulo = projeto.titulo,
         descricao= projeto.descricao,
-        lab_creator= projeto.labCreator
+        lab_creator= projeto.labCreator,
+        image= image_process
     )
 
     query = select(Projeto).filter(Projeto.titulo == novo_projeto.titulo)
@@ -153,9 +158,8 @@ async def delete_projeto(projeto_id: str, db: AsyncSession = Depends(get_session
         projeto_del: Projeto = result.scalars().unique().one_or_none()
 
         if projeto_del:
-            db.delete(projeto_del)
+            await db.delete(projeto_del)
             await db.commit()
             return Response(status_code=status.HTTP_204_NO_CONTENT)
-        
         else:
             raise HTTPException(detail="Projeto não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
