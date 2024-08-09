@@ -7,6 +7,7 @@ class ProjetoSchema(BaseModel):
     id: Optional[UUID4] = None 
     titulo: str
     descricao: str
+    image: Optional[str] = None
     autor_id: Optional[UUID4] = None 
     data_inicial: datetime
     data_up: datetime
@@ -17,11 +18,13 @@ class ProjetoSchema(BaseModel):
 
 class ProjetoSchemaCreate(BaseModel):
     titulo: str
+    image: Optional[str] = None
     descricao: str
     labCreator: str
 
 class ProjetoSchemaUp(BaseModel):
     titulo: Optional[str] = None
+    image: Optional[str] = None
     descricao: Optional[str] = None
 
 class ProjetoSchemaAddMember(BaseModel):
