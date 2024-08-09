@@ -14,7 +14,7 @@ from email.mime.text import MIMEText
 
 from sqlalchemy.future import select 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
 from models.usuario import Usuario
@@ -49,9 +49,9 @@ async def auth_user(usuario_logado: Usuario = Depends(get_current_user)):
     return credential_exception
 
 @router.post("/sendEmail", status_code=status.HTTP_202_ACCEPTED)
-async def send_reset_email_endpoint(request: SendEmail, db: AsyncSession = Depends(get_session)):
+async def send_reset_email_endpoint(request: SendEmail, db: Session = Depends(get_session)):
     query = select(Usuario).filter(Usuario.email == request.email)
-    result = await db.execute(query)
+    result = db.execute(query)
     user: Usuario = result.scalars().unique().one_or_none()
     if user is None:
         raise HTTPException(detail="Nenhum usuário foi encontrado com esté e-mail!", status_code=status.HTTP_404_NOT_FOUND)
@@ -92,15 +92,15 @@ async def send_reset_email_endpoint(request: SendEmail, db: AsyncSession = Depen
     
 ## Put password user
 @router.post('/passwordRecovery', status_code=status.HTTP_200_OK)
-async def password_recovery(emailRecovery: RecoveryPassword, db: AsyncSession = Depends(get_session) ):
+async def password_recovery(emailRecovery: RecoveryPassword, db: Session = Depends(get_session) ):
     query = select(Usuario).filter(Usuario.id == emailRecovery.id_user)
-    result = await db.execute(query)
+    result = db.execute(query)
     user: Usuario = result.scalars().unique().one_or_none()
     if user is None:
         raise HTTPException(detail="Nenhum usuário foi encontrado com esté e-mail!", status_code=status.HTTP_404_NOT_FOUND)
     
     user.senha = gerar_hash_senha(emailRecovery.senha)
-    await db.commit()
+    db.commit()
 
 
 # GET Logado
@@ -110,9 +110,9 @@ async def get_logado(usuario_logado: Usuario = Depends(get_current_user)):
 
 #POST Signup
 @router.post('/signup', status_code=status.HTTP_201_CREATED, response_model=UsuarioSchemaBase)
-async def post_usuario(usuario: UsuarioSchemaCreate, db: AsyncSession = Depends(get_session)):
+async def post_usuario(usuario: UsuarioSchemaCreate, db: Session = Depends(get_session)):
     query = select(Genero).filter(Genero.id == usuario.genero)
-    result = await db.execute(query)
+    result = db.execute(query)
     genero: Genero = result.scalars().unique().one_or_none()
 
     if genero is None:
@@ -120,7 +120,7 @@ async def post_usuario(usuario: UsuarioSchemaCreate, db: AsyncSession = Depends(
 
     # Verificar se a matrícula já existe
     query = select(Usuario).filter(Usuario.matricula == usuario.matricula)
-    result = await db.execute(query)
+    result = db.execute(query)
     matricula_existente = result.scalars().unique().one_or_none()
     if matricula_existente:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Matrícula já existe")
@@ -146,8 +146,8 @@ async def post_usuario(usuario: UsuarioSchemaCreate, db: AsyncSession = Depends(
 
     try:
         db.add(novo_usuario)
-        await db.commit()
-        await db.refresh(novo_usuario)
+        db.commit()
+        db.refresh(novo_usuario)
 
         return novo_usuario
     except IntegrityError as e:
@@ -155,17 +155,17 @@ async def post_usuario(usuario: UsuarioSchemaCreate, db: AsyncSession = Depends(
 
 # GET Usuarios
 @router.get('/', response_model=List[UsuarioSchemaBase])
-async def get_usuarios(db: AsyncSession = Depends(get_session)):
+async def get_usuarios(db: Session = Depends(get_session)):
     query = select(Usuario)
-    result = await db.execute(query)
+    result = db.execute(query)
     usuarios: List[UsuarioSchemaBase] = result.scalars().unique().all() 
 
     return usuarios
     
 @router.get('/{usuario_id}', response_model=UsuarioSchemaLaboratoriosAndProjetos, status_code=status.HTTP_200_OK)
-async def get_usuario(usuario_id: str, db: AsyncSession= Depends(get_session)):
+async def get_usuario(usuario_id: str, db: Session= Depends(get_session)):
     query = select(Usuario).options(selectinload(Usuario.laboratorios), selectinload(Usuario.projetos)).filter(Usuario.id == usuario_id)
-    result = await db.execute(query)
+    result = db.execute(query)
     usuario = result.scalars().first()
 
     if usuario:
@@ -175,11 +175,11 @@ async def get_usuario(usuario_id: str, db: AsyncSession= Depends(get_session)):
         
 #PUT Usuario
 @router.put('/{usuario_id}', response_model=UsuarioSchemaBase, status_code=status.HTTP_202_ACCEPTED)
-async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db: AsyncSession =Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db: Session =Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     if usuario_logado:
         list_aux: List[Permissao] = []
         query= select(Usuario).filter(Usuario.id == usuario_id)
-        result= await db.execute(query)
+        result= db.execute(query)
         usuario_up: UsuarioSchemaBase = result.scalars().unique().one_or_none()
 
         if usuario_up:
@@ -199,7 +199,7 @@ async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db: AsyncSessio
                 usuario_up.data_nascimento = usuario.data_nascimento
             if usuario.genero:
                 query = select(Genero).filter(Genero.id == usuario.genero)
-                result = await db.execute(query)
+                result = db.execute(query)
                 genero: Genero = result.scalars().unique().one_or_none()
                 
                 if genero is None:
@@ -208,7 +208,7 @@ async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db: AsyncSessio
                     usuario_up.genero = genero.id
             if usuario.list_permissoes:
                 query= select(Permissao)
-                result= await db.execute(query)
+                result= db.execute(query)
                 permissoes: List[Permissao] = result.scalars().unique().all()
 
                 for item in usuario.list_permissoes:
@@ -223,7 +223,7 @@ async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db: AsyncSessio
 
             usuario_up.data_atualizacao = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            await db.commit()
+            db.commit()
 
             return usuario_up
         else:
@@ -231,11 +231,11 @@ async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db: AsyncSessio
         
 
 @router.delete('/{usuario_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_usuario(usuario_id: str, db: AsyncSession =Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+async def delete_usuario(usuario_id: str, db: Session =Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     if usuario_logado:
         # Verifica se o usuário é coordenador de algum laboratório
         query_coordenador = select(Laboratorio).filter(Laboratorio.coordenador_id == usuario_id)
-        result_coordenador = await db.execute(query_coordenador)
+        result_coordenador = db.execute(query_coordenador)
         laboratorios_coordenador: Laboratorio = result_coordenador.scalars().unique().one_or_none()
 
         if laboratorios_coordenador:
@@ -246,17 +246,17 @@ async def delete_usuario(usuario_id: str, db: AsyncSession =Depends(get_session)
 
         # Se o usuário não for coordenador de nenhum laboratório, exclui o usuário
         query_usuario = select(Usuario).filter(Usuario.id == usuario_id)
-        result_usuario = await db.execute(query_usuario)
+        result_usuario = db.execute(query_usuario)
         usuario_del: Usuario = result_usuario.scalars().unique().one_or_none()
 
         if usuario_del:
             query= select(Pending).filter(Pending.id_user == usuario_del.id)
-            result= await db.execute(query)
+            result= db.execute(query)
             peding: Pending = result.scalars().unique().one_or_none()
             
-            await db.delete(peding)
-            await db.delete(usuario_del)
-            await db.commit()
+            db.delete(peding)
+            db.delete(usuario_del)
+            db.commit()
 
             return Response(status_code=status.HTTP_204_NO_CONTENT)
         else:
@@ -264,8 +264,8 @@ async def delete_usuario(usuario_id: str, db: AsyncSession =Depends(get_session)
 
 #POST Login
 @router.post('/login')
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession =Depends(get_session)):
-    usuario = await autenticar(email=form_data.username, senha=form_data.password, db=db)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session =Depends(get_session)):
+    usuario = autenticar(email=form_data.username, senha=form_data.password, db=db)
     print(usuario.id)
     if not usuario:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Dados de acesso incorretos.')
@@ -280,10 +280,10 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
 async def post_pending_laboratory(
     pending: PendingSchema, 
     usuario_logado: Usuario = Depends(get_current_user), 
-    db: AsyncSession = Depends(get_session)
+    db: Session = Depends(get_session)
 ):
     query = select(Laboratorio).filter(Laboratorio.id == pending.id_lab)
-    result = await db.execute(query)
+    result = db.execute(query)
     laboratorio: Usuario = result.scalars().unique().one_or_none()
 
     if laboratorio is None:
@@ -300,12 +300,12 @@ async def post_pending_laboratory(
 
     laboratorio.lista_acess.append(novo_pedido)
     db.add(laboratorio)
-    await db.commit()
+    db.commit()
 
 @router.delete('/deletePending/{usuario_id}/{id_peding}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_usuario(usuario_id: str, id_peding: str, db: AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+async def delete_usuario(usuario_id: str, id_peding: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     query = select(Usuario).filter(Usuario.id == usuario_id)
-    result = await db.execute(query)
+    result = db.execute(query)
     usuario: Usuario = result.scalars().unique().one_or_none()
 
     if usuario is None:
@@ -316,7 +316,7 @@ async def delete_usuario(usuario_id: str, id_peding: str, db: AsyncSession = Dep
         if item.id == uuid.UUID(id_peding):
             del usuario.lista_pending[index]
             db.add(usuario)
-            await db.commit()
+            db.commit()
             return
 
     raise HTTPException(detail="Pendência não encontrada!", status_code=status.HTTP_404_NOT_FOUND)

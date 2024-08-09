@@ -4,7 +4,7 @@ from fastapi import APIRouter, status, Depends, HTTPException, Response
 from datetime import datetime
 
 from sqlalchemy.future import  select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from models.associetions import usuario_laboratorio_association
 from models.laboratorio import Laboratorio
@@ -27,17 +27,17 @@ router = APIRouter()
 
 #POST Laboratorio
 @router.post('/', status_code=status.HTTP_201_CREATED, response_model=LaboratorioSchema)
-async def post_laboratorio(
+def post_laboratorio(
     laboratorio: LaboratorioSchemaCreate, 
     usuario_logado: Usuario = Depends(get_current_user), 
-    db: AsyncSession = Depends(get_session)
+    db: Session = Depends(get_session)
 ):
     query = select(Usuario).filter(Usuario.id == usuario_logado.id)
-    result = await db.execute(query)
+    result = db.execute(query)
     usuario_coord: Usuario= result.scalars().unique().one_or_none()
 
     queryPerm = select(PermissaoOfLab).filter(PermissaoOfLab.title == 'Coordenador')
-    result = await db.execute(queryPerm)
+    result = db.execute(queryPerm)
     permition_coord: PermissaoOfLab = result.scalars().unique().one_or_none()
 
     processed_image = None
@@ -57,10 +57,10 @@ async def post_laboratorio(
     novo_laboratorio.membros.append(usuario_coord)
 
     db.add(novo_laboratorio)
-    await db.commit()
+    db.commit()
 
     queryLab = select(Laboratorio).filter(Laboratorio.coordenador_id == usuario_logado.id)
-    result = await db.execute(queryLab)
+    result = db.execute(queryLab)
     laboratorio: Laboratorio = result.scalars().unique().one_or_none()
 
     permissao_laboratorio = PermissaoLaboratorio(
@@ -71,24 +71,24 @@ async def post_laboratorio(
 
     laboratorio.lista_perm.append(permissao_laboratorio)
     db.add(laboratorio)
-    await db.commit() 
+    db.commit() 
 
     return laboratorio
 
 #GET Laboratorios
 @router.get('/', response_model= List[LaboratorioSchema], status_code=status.HTTP_200_OK)
-async def get_laboratorios(db:AsyncSession = Depends(get_session)):
+def get_laboratorios(db:Session = Depends(get_session)):
     query = select(Laboratorio)
-    result = await db.execute(query)
+    result = db.execute(query)
     laboratorios: List[Laboratorio] = result.scalars().unique().all()
 
     return laboratorios
 
 #GET laboratorio
 @router.get('/{laboratorio_id}', response_model= LaboratorioSchema, status_code=status.HTTP_200_OK)
-async def get_laboratorio(laboratorio_id: str, db:AsyncSession = Depends(get_session)):
+def get_laboratorio(laboratorio_id: str, db:Session = Depends(get_session)):
     query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
-    result = await db.execute(query)
+    result = db.execute(query)
     laboratorio: Laboratorio = result.scalars().unique().one_or_none()
     
     if laboratorio:
@@ -98,10 +98,10 @@ async def get_laboratorio(laboratorio_id: str, db:AsyncSession = Depends(get_ses
 
 #PUT laboratorio
 @router.put('/{laboratorio_id}', response_model=LaboratorioSchema, status_code=status.HTTP_202_ACCEPTED)
-async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp, db:AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp, db:Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     if usuario_logado:
         query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
-        result = await db.execute(query)
+        result = db.execute(query)
         laboratorio_up: Laboratorio = result.scalars().unique().one_or_none()
 
         if laboratorio_up:
@@ -120,7 +120,7 @@ async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp,
             
             laboratorio_up.data_up = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
-            await db.commit()
+            db.commit()
             
             return laboratorio_up
         
@@ -129,15 +129,15 @@ async def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp,
         
 #DELETE laboratorio
 @router.delete('/{laboratorio_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_laboratorio(laboratorio_id: str, db:AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+def delete_laboratorio(laboratorio_id: str, db:Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     if usuario_logado:
         query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
-        result = await db.execute(query)
+        result = db.execute(query)
         laboratorio_del: Laboratorio = result.scalars().unique().one_or_none()
 
         if laboratorio_del:
-            await db.delete(laboratorio_del)
-            await db.commit()
+            db.delete(laboratorio_del)
+            db.commit()
             return Response(status_code=status.HTTP_204_NO_CONTENT)
         
         else:
@@ -148,11 +148,11 @@ async def delete_laboratorio(laboratorio_id: str, db:AsyncSession = Depends(get_
 
 #POST member in laboratory
 @router.post('/addMember', status_code=status.HTTP_201_CREATED)
-async def post_member(user: LaboratorioSchemaAddMember , db:AsyncSession = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+def post_member(user: LaboratorioSchemaAddMember , db:Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     # Primeiro, obtenha o laboratório na mesma sessão
     if usuario_logado: 
         query = select(Laboratorio).filter(Laboratorio.id == user.idLaboratorio)
-        result = await db.execute(query)
+        result = db.execute(query)
         laboratorio: Laboratorio = result.scalars().unique().one_or_none()
 
         if laboratorio is None:
@@ -160,7 +160,7 @@ async def post_member(user: LaboratorioSchemaAddMember , db:AsyncSession = Depen
 
         # Em seguida, obtenha o usuário na mesma sessão
         query = select(Usuario).filter(Usuario.id == user.idUser)
-        result = await db.execute(query)
+        result = db.execute(query)
         usuario: Usuario = result.scalars().unique().one_or_none()
 
         if usuario is None:
@@ -172,21 +172,21 @@ async def post_member(user: LaboratorioSchemaAddMember , db:AsyncSession = Depen
                 laboratorio.membros.append(usuario)
 
                 db.add(laboratorio)
-                await db.commit()
+                db.commit()
                 return {"detail": "Membro adicionado com sucesso com sucesso!"}
 
 
 
 @router.delete('/removeMember/{laboratorio_id}/{member_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_member_laboratory(
+def delete_member_laboratory(
     laboratorio_id: str, 
     member_id: str, 
-    db:AsyncSession = Depends(get_session), 
+    db:Session = Depends(get_session), 
     usuario_logado: Usuario = Depends(get_current_user)
 ):
     if usuario_logado:
         query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
-        result = await db.execute(query)
+        result = db.execute(query)
         laboratorio: Laboratorio = result.scalars().unique().one_or_none()
 
         if laboratorio is None:
@@ -206,7 +206,7 @@ async def delete_member_laboratory(
                 usuario_laboratorio_association.c.usuario_id == member_uuid
             )
             db.execute(delete_stmt)
-            await db.commit()
+            db.commit()
         else:
             raise HTTPException(detail="Membro não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
@@ -214,20 +214,20 @@ async def delete_member_laboratory(
 ############################### End Points de permissão do laboratorio #############################
 
 @router.post("/addPerm", response_model=PermissaoLaboratorioResponse)
-async def create_permissao_laboratorio(
+def create_permissao_laboratorio(
     permissao_laboratorio: PermissaoLaboratorioCreate,
-    db:AsyncSession = Depends(get_session)
+    db:Session = Depends(get_session)
 ):
     # Verifica se a permissão existe
     query = select(PermissaoOfLab).filter(PermissaoOfLab.id == permissao_laboratorio.perm_id)
-    result = await db.execute(query)
+    result = db.execute(query)
     db_permissao: PermissaoOfLab = result.scalars().unique().one_or_none()
     if db_permissao is None:
         raise HTTPException(status_code=404, detail="Permissão encontrada")
 
     # Verifica se o laboratório existe
     query = select(Laboratorio).filter(Laboratorio.id == permissao_laboratorio.id_lab)
-    result = await db.execute(query)
+    result = db.execute(query)
     db_laboratorio: Laboratorio = result.scalars().unique().one_or_none()
     if db_laboratorio is None:
         raise HTTPException(status_code=404, detail="Laboratorio não encontrado")
@@ -245,26 +245,26 @@ async def create_permissao_laboratorio(
     )
     db_laboratorio.lista_perm.append(db_permissao_laboratorio)
     db.add(db_laboratorio)
-    await db.commit() 
+    db.commit() 
     return db_permissao_laboratorio
 
 
 ## Upgrade permission laboratorio
 @router.post('/upPermission', response_model=LaboratorioSchema, status_code=status.HTTP_202_ACCEPTED)
-async def update_perm(
+def update_perm(
     value: PermissaoLaboratorioUp,
-    db:AsyncSession = Depends(get_session)
+    db:Session = Depends(get_session)
 ):
     # Verifica se a permissão existe
     query = select(Permissao).filter(Permissao.id == value.perm_id)
-    result = await db.execute(query)
+    result = db.execute(query)
     db_permissao: Permissao = result.scalars().unique().one_or_none()
     if db_permissao is None:
         raise HTTPException(status_code=404, detail="Permissao não encontrada")
 
     # Verifica se o laboratório existe
     query = select(Laboratorio).filter(Laboratorio.id == value.id_lab)
-    result = await db.execute(query)
+    result = db.execute(query)
     laboratorio_up: Laboratorio = result.scalars().unique().one_or_none()
     if laboratorio_up is None:
         raise HTTPException(status_code=404, detail="Laboratorio não encontrado")
@@ -275,20 +275,20 @@ async def update_perm(
             perm.perm_id = value.perm_id
     
     db.add(laboratorio_up)
-    await db.commit()
+    db.commit()
     return laboratorio_up
 
 ############################### Pedidos de acesso #############################
 
 #POST Pedido de acesso ao laboratorio
 @router.post('/invitationUser', status_code=status.HTTP_201_CREATED)
-async def post_invitation(
+def post_invitation(
     pending: PendingSchema, 
     usuario_logado: Usuario = Depends(get_current_user), 
-    db:AsyncSession = Depends(get_session)
+    db:Session = Depends(get_session)
 ):
     query = select(Usuario).filter(Usuario.id == pending.id_user)
-    result = await db.execute(query)
+    result = db.execute(query)
     usuario: Usuario = result.scalars().unique().one_or_none()
 
     if usuario is None:
@@ -305,4 +305,4 @@ async def post_invitation(
 
     usuario.lista_pending.append(novo_pedido)
     db.add(usuario)
-    await db.commit()
+    db.commit()

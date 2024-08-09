@@ -1,6 +1,7 @@
 def update_laboratorio():
     return {
         "nome": "Labens1",
+        "image": None,
         "descricao": "Um laboratorio focado para gerencia de dados e manippulação de banco de dados!",
         "sobre": "Laboratorio limpo, com pessoa legas e interessantes!",
         "template": 2,

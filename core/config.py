@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     
     @property
     def DB_URL(self) -> str:
-        return f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
+        return f'postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.POSTGRES_DB}'
     
     DBBaseModel: ClassVar = declarative_base()
 
