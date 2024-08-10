@@ -18,12 +18,12 @@ oauth2_schema = OAuth2PasswordBearer (
     tokenUrl=f"{settings.API_V1_STR}/usuarios/login"
 )
 
-def autenticar(email: EmailStr, senha:str, db: Session) -> Optional[Usuario]:
+async def autenticar(email: EmailStr, senha:str, db: Session) -> Optional[Usuario]:
     query = select(Usuario).filter(Usuario.ativo == True).filter(Usuario.email == email)
     result = db.execute(query)
     usuario: Usuario = result.scalars().unique().one_or_none()
 
-    if not usuario:
+    if usuario is None:
         return None
     if not verificar_senha(senha, usuario.senha):
         return None
