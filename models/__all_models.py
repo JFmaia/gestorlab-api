@@ -6,3 +6,4 @@ from models.genero import Genero
 from models.pending import Pending
 from models.usuario import Usuario
 from models.permissao_lab import PermissaoLaboratorio
+from models.endereco import Endereco
