@@ -13,6 +13,7 @@ from models.permissao import Permissao
 from models.permissaoLab import PermissaoOfLab
 from models.pending import Pending
 from models.permissao_lab import PermissaoLaboratorio
+from models.endereco import Endereco
 
 from core.deps import get_session, get_current_user, process_image
 
@@ -44,6 +45,20 @@ def post_laboratorio(
     if laboratorio.image:
         processed_image = process_image(laboratorio.image)
 
+    novo_endereco: Endereco = Endereco(
+        logradouro= laboratorio.endereco.logradouro ,
+        numero= laboratorio.endereco.numero,
+        complemento= laboratorio.endereco.complemento,
+        bairro= laboratorio.endereco.bairro,
+        cidade= laboratorio.endereco.cidade,
+        estado= laboratorio.endereco.estado,
+        cep= laboratorio.endereco.cep,
+        pais= laboratorio.endereco.pais
+    )
+
+    db.add(novo_endereco)
+    db.commit()
+
     novo_laboratorio: Laboratorio = Laboratorio(
         coordenador_id= usuario_logado.id,
         nome = laboratorio.nome,
@@ -51,7 +66,8 @@ def post_laboratorio(
         template= laboratorio.template,
         descricao= laboratorio.descricao,
         email= laboratorio.email,
-        image= processed_image
+        image= processed_image,
+        endereco_id = novo_endereco.id
     )
 
     novo_laboratorio.membros.append(usuario_coord)
@@ -72,6 +88,9 @@ def post_laboratorio(
     laboratorio.lista_perm.append(permissao_laboratorio)
     db.add(laboratorio)
     db.commit() 
+
+    usuario_coord.primeiro_acesso = False
+    db.commit()
 
     return laboratorio
 
@@ -127,18 +146,20 @@ def put_laboratorio(laboratorio_id: str, laboratorio: LaboratorioSchemaUp, db:Se
         else:
             raise HTTPException(detail="laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
-#DELETE laboratorio
 @router.delete('/{laboratorio_id}', status_code=status.HTTP_204_NO_CONTENT)
-def delete_laboratorio(laboratorio_id: str, db:Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+def delete_laboratorio(laboratorio_id: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     if usuario_logado:
         query = select(Laboratorio).filter(Laboratorio.id == laboratorio_id)
         result = db.execute(query)
         laboratorio_del: Laboratorio = result.scalars().unique().one_or_none()
 
         if laboratorio_del:
-            db.delete(laboratorio_del)
-            db.commit()
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
+            if usuario_logado.id == laboratorio_del.coordenador_id:        
+                db.delete(laboratorio_del)
+                db.commit()
+                return Response(status_code=status.HTTP_204_NO_CONTENT)
+            else:
+                raise HTTPException(detail="Você não pode deletar este laboratório!!", status_code=status.HTTP_401_UNAUTHORIZED)
         
         else:
             raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
