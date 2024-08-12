@@ -27,7 +27,7 @@ def get_session():
 
 
 ## Função que descobre quem é o usuario pelo token
-async def get_current_user(db: Session = Depends(get_session), token: str = Depends(oauth2_schema)) -> Usuario: # type: ignore
+def get_current_user(db: Session = Depends(get_session), token: str = Depends(oauth2_schema)) -> Usuario: # type: ignore
     credential_exception: HTTPException = HTTPException(
         status_code= status.HTTP_401_UNAUTHORIZED,
         detail='Não foi possícel autenticar a credencial',
@@ -42,22 +42,18 @@ async def get_current_user(db: Session = Depends(get_session), token: str = Depe
             options={"verify_aud": False}
         )
         username: str = payload.get("sub")
-        if username is None:
-            raise credential_exception
-        
         token_data: TokenData = TokenData(username=username)
 
     except JWTError:
         raise credential_exception
     
-    with db as session:
-        query = select(Usuario).filter(Usuario.id == token_data.username)
-        result = session.execute(query)
-        usuario: Usuario = result.scalars().unique().one_or_none()
-        if usuario is None:
-            raise credential_exception
-        
-        return usuario
+    query = select(Usuario).filter(Usuario.id == token_data.username)
+    result = db.execute(query)
+    usuario: Usuario = result.scalars().unique().one_or_none()
+    if usuario is None:
+        raise credential_exception
+    
+    return usuario
     
 # Função para processar a imagem
 def process_image(image_data: str) -> str:

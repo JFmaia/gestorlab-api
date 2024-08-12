@@ -18,12 +18,12 @@ oauth2_schema = OAuth2PasswordBearer (
     tokenUrl=f"{settings.API_V1_STR}/usuarios/login"
 )
 
-def autenticar(email: EmailStr, senha:str, db: Session) -> Optional[Usuario]:
+async def autenticar(email: EmailStr, senha:str, db: Session) -> Optional[Usuario]:
     query = select(Usuario).filter(Usuario.ativo == True).filter(Usuario.email == email)
     result = db.execute(query)
     usuario: Usuario = result.scalars().unique().one_or_none()
 
-    if not usuario:
+    if usuario is None:
         return None
     if not verificar_senha(senha, usuario.senha):
         return None
@@ -31,7 +31,7 @@ def autenticar(email: EmailStr, senha:str, db: Session) -> Optional[Usuario]:
     return usuario
     
 
-def _criar_token(tipo_token: str, tempo_vida: timedelta, sub:str) -> str:
+def criar_token(tipo_token: str, tempo_vida: timedelta, sub:str) -> str:
     payload = {}
 
     rn = timezone('America/Fortaleza') 
@@ -46,7 +46,7 @@ def _criar_token(tipo_token: str, tempo_vida: timedelta, sub:str) -> str:
 
 
 def criar_token_acesso(sub: str) -> str:
-    return _criar_token(
+    return criar_token(
         tipo_token = 'access_token',
         tempo_vida= timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         sub=sub

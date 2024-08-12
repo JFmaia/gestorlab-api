@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from models.genero import Genero
 from models.usuario import Usuario
 from models.laboratorio import Laboratorio
 from models.projeto import Projeto
@@ -49,15 +50,24 @@ def client():
 def db():
     db = TestingSessionLocal()
 
+    genero = Genero(
+        title="Coodernador"
+    )
+
+    db.add(genero)
+    db.commit()
+    genero_id = genero.id
+
     # Cria um usuário
     user = Usuario(
         primeiro_nome="User",
         segundo_nome="Admin",
+        data_nascimento="08/08/2000",
         senha="1234",
+        genero= genero_id,
         email="admin@gmail.com",
         matricula=123131311224,
         tel=84999215902,
-        tag=1,
         primeiro_acesso=True
     )
 
@@ -69,6 +79,7 @@ def db():
     lab = Laboratorio(
         nome="Labens3",
         descricao="Muito bom",
+        image= None,
         sobre="gosto daqui",
         template=1,
         email="labens4@gmail.com",
@@ -82,6 +93,7 @@ def db():
     # Cria um projeto associado ao usuário e ao laboratório
     project = Projeto(
         autor_id=user_id,
+        image= None,
         lab_creator= lab_id,
         titulo='My Projeto',
         descricao='Tudo bom'

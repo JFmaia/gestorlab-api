@@ -10,5 +10,4 @@ class PermissaoLaboratorio(settings.DBBaseModel):
     id = Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
     id_user = Column(UUIDType(binary=False), nullable=False)
     id_lab = Column(UUIDType(binary=False), nullable=False)
-    perm_id = Column(UUIDType(binary=False), ForeignKey('permissao.id'), nullable=False)
-    perm = relationship("Permissao", backref="permissoes_laboratorio")
+    perm_id = Column(UUIDType(binary=False), nullable=False)

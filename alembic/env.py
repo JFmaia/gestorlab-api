@@ -1,5 +1,5 @@
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, create_engine, pool
+from sqlalchemy import create_engine, pool
 from alembic import context
 
 # Importar os modelos para 'autogenerate'
@@ -35,7 +35,7 @@ def run_migrations_offline() -> None:
 
 # Migrations online
 def run_migrations_online() -> None:
-    url = get_database_url()
+    url = get_database_url().replace("asyncpg", "psycopg2")
     connectable = create_engine(url, poolclass=pool.NullPool)
     
     with connectable.connect() as connection:

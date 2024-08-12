@@ -1,21 +1,24 @@
 from typing import List
 from fastapi import APIRouter, status, Depends, HTTPException
+from datetime import datetime
 
 from sqlalchemy.future import select
 from sqlalchemy.orm import Session
+
 from models.pending import Pending
 from models.permissao import Permissao
 from models.usuario import Usuario
-from schemas.pending_schema import PendingSchema, PendingAccepted
+
 from core.deps import get_session, get_current_user
-from datetime import datetime
+
+from schemas.pending_schema import PendingSchema, PendingAccepted
 
 router = APIRouter()
 
 #GET User Pendentes
 @router.get('/', response_model= List[PendingSchema])
 async def get_pending(db: Session = Depends(get_session)):
-  query = select(Pending)
+  query = select(Pending).filter(Pending.ativo == True)
   result = db.execute(query)
   pendings: List[Pending] = result.scalars().unique().all()
 
@@ -25,7 +28,6 @@ async def get_pending(db: Session = Depends(get_session)):
 @router.post('/', status_code=status.HTTP_201_CREATED, response_model=PendingSchema)
 async def post_pending(
     pending: PendingSchema, 
-    usuario_logado: Usuario = Depends(get_current_user), 
     db: Session = Depends(get_session)
 ):
     novo_pedido: Pending = Pending(

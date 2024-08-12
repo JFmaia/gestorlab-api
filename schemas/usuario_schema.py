@@ -2,6 +2,7 @@
 from typing import Optional, List 
 from pydantic import BaseModel, EmailStr, UUID4
 from schemas.permissao_schema import PermissaoSchema
+from .pending_schema import PendingSchema
 
 class UsuarioSchemaBase(BaseModel):
     id: Optional[UUID4] = None 
@@ -18,6 +19,7 @@ class UsuarioSchemaBase(BaseModel):
     matricula: int
     tel: int
     permissoes: Optional[List[PermissaoSchema]] = None
+    lista_pending: Optional[List[PendingSchema]] = None
 
 class Config:
     from_attributes = True
@@ -37,12 +39,19 @@ class UsuarioSchemaLaboratoriosAndProjetos(UsuarioSchemaBase):
     projetos: Optional[List[ProjetoSchema]]
 
 class UsuarioSchemaUp(UsuarioSchemaBase):
-    primeiro_nome: Optional[str]
-    segundo_nome: Optional[str] 
-    senha: Optional[str]
-    email: Optional[EmailStr]
-    matricula: Optional[int]
-    genero: Optional[UUID4]
-    tel: Optional[int]
+    primeiro_nome: Optional[str] = None
+    segundo_nome: Optional[str] = None
+    senha: Optional[str] = None
+    email: Optional[EmailStr] = None
+    matricula: Optional[int] = None
+    genero: Optional[UUID4] = None
+    tel: Optional[int] = None
     list_permissoes: Optional[List[UUID4]] = None
     image: Optional[str] = None
+
+class SendEmail(BaseModel):
+    email: str
+
+class RecoveryPassword(BaseModel):
+    id_user: UUID4
+    senha: str
