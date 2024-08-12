@@ -12,9 +12,9 @@ class Laboratorio(settings.DBBaseModel):
     id = Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
     coordenador_id = Column(UUIDType(binary=False), ForeignKey("usuario.id"), nullable=False)
     nome = Column(String(256), nullable=False)
-    sobre = Column(String(5000), nullable=False)
+    sobre = Column(String(10000), nullable=False)
     image =  Column(Text, nullable=True)
-    descricao = Column(String(256), nullable=True)
+    descricao = Column(String(5000), nullable=True)
     email = Column(String(256), unique=True, nullable=True)
     data_inicial = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
     data_up = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
@@ -42,4 +42,5 @@ class Laboratorio(settings.DBBaseModel):
         lazy="joined"
     )
     template = Column(Integer, nullable=False)
-    
+    endereco_id = Column(UUIDType(binary=False), ForeignKey("enderecos.id"), nullable=True) 
+    endereco = relationship("Endereco", lazy='joined')
