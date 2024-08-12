@@ -231,7 +231,7 @@ async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db: Session =De
         
 
 @router.delete('/{usuario_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_usuario(usuario_id: str, db: Session =Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
+async def delete_usuario(usuario_id: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     if usuario_logado:
         # Verifica se o usuário é coordenador de algum laboratório
         query_coordenador = select(Laboratorio).filter(Laboratorio.coordenador_id == usuario_id)
@@ -250,11 +250,14 @@ async def delete_usuario(usuario_id: str, db: Session =Depends(get_session), usu
         usuario_del: Usuario = result_usuario.scalars().unique().one_or_none()
 
         if usuario_del:
-            query= select(Pending).filter(Pending.id_user == usuario_del.id)
-            result= db.execute(query)
+            query = select(Pending).filter(Pending.id_user == usuario_del.id)
+            result = db.execute(query)
             peding: Pending = result.scalars().unique().one_or_none()
             
-            db.delete(peding)
+            # Verifica se existe uma instância de Pending antes de deletar
+            if peding:
+                db.delete(peding)
+                
             db.delete(usuario_del)
             db.commit()
 
