@@ -4,6 +4,7 @@ from datetime import datetime
 from .usuario_schema import UsuarioSchemaBase
 from .projeto_schema import ProjetoSchema
 from .pending_schema import PendingSchema
+from .endereco_schema import EnderecoSchema
 
 class PermissaoLaboratorioResponse(BaseModel):
     id: UUID4
@@ -31,6 +32,8 @@ class LaboratorioSchema(BaseModel):
     projetos: Optional[List[ProjetoSchema]] = None
     lista_perm: Optional[List[PermissaoLaboratorioResponse]] = None
     lista_acess: Optional[List[PendingSchema]] = None
+    endereco_id: Optional[UUID4] = None 
+    endereco: Optional[EnderecoSchema]=None
 
     class Config:
         from_attributes = True
@@ -42,6 +45,7 @@ class LaboratorioSchemaCreate(BaseModel):
     template: int
     email: EmailStr
     image: Optional[str] = None
+    endereco: Optional[EnderecoSchema]=None
 
 class LaboratorioSchemaUp(BaseModel):
     nome: Optional[str] = None
