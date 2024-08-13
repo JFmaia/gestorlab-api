@@ -312,8 +312,15 @@ def post_invitation(
     result = db.execute(query)
     usuario: Usuario = result.scalars().unique().one_or_none()
 
+    query = select(Laboratorio).filter(Laboratorio.id == pending.id_lab)
+    result = db.execute(query)
+    lab: Laboratorio = result.scalars().unique().one_or_none()
+
     if usuario is None:
         raise HTTPException(detail="Usuário não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+    
+    if lab is None:
+        raise HTTPException(detail="Laboratório não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
     
     for item in usuario.lista_pending:
         if item.id_lab == pending.id_lab:
@@ -321,6 +328,7 @@ def post_invitation(
         
     novo_pedido: Pending = Pending(
         id_user= pending.id_user,
+        nome_lab= lab.nome,
         id_lab= pending.id_lab
     )
 

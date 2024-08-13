@@ -30,18 +30,25 @@ async def post_pending(
     pending: PendingSchema, 
     db: Session = Depends(get_session)
 ):
-    novo_pedido: Pending = Pending(
-        id_user= pending.id_user,
-        matricula_user = pending.matricula_user
-    )
-
     query = select(Pending).filter(Pending.matricula_user == pending.matricula_user)
     result = db.execute(query)
-    veryUsuario: Usuario = result.scalars().unique().one_or_none()
+    veryUsuario: Pending = result.scalars().unique().one_or_none()
 
     if(veryUsuario):
         raise HTTPException(detail="Já existe um pedido desse usuario!", status_code=status.HTTP_403_FORBIDDEN)
     else:
+        query = select(Usuario).filter(Usuario.id == pending.id_user)
+        result = db.execute(query)
+        usuario: Usuario = result.scalars().unique().one_or_none()
+
+        if usuario is None:
+            raise HTTPException(detail="Nenhum usuário encontrado", status_code=status.HTTP_404_NOT_FOUND)
+
+        novo_pedido: Pending = Pending(
+            id_user= pending.id_user,
+            nome_user= usuario.primeiro_nome + ' ' +usuario.segundo_nome,
+            matricula_user = pending.matricula_user
+        )
         db.add(novo_pedido)
         db.commit()
         return novo_pedido

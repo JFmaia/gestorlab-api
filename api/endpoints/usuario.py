@@ -286,17 +286,25 @@ async def post_pending_laboratory(
 ):
     query = select(Laboratorio).filter(Laboratorio.id == pending.id_lab)
     result = db.execute(query)
-    laboratorio: Usuario = result.scalars().unique().one_or_none()
+    laboratorio: Laboratorio = result.scalars().unique().one_or_none()
+
+    query = select(Usuario).filter(Usuario.id == pending.id_user)
+    result = db.execute(query)
+    usuario: Usuario = result.scalars().unique().one_or_none()
 
     if laboratorio is None:
         raise HTTPException(detail="Laboratório não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
     
+    if usuario is None:
+        raise HTTPException(detail="Usuário não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+    
     for item in laboratorio.lista_acess:
         if item.id_user == pending.id_user:
             raise HTTPException(detail="Já existe um pedido seu nesse laboratório", status_code=status.HTTP_406_NOT_ACCEPTABLE)
-        
+
     novo_pedido: Pending = Pending(
         id_user= pending.id_user,
+        nome_user = usuario.primeiro_nome + ' ' + usuario.segundo_nome,
         id_lab= pending.id_lab
     )
 
