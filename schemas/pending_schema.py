@@ -4,8 +4,11 @@ from pydantic import BaseModel, UUID4
 class PendingSchema(BaseModel):
     id: Optional[UUID4] = None
     id_user: Optional[UUID4] = None
+    nome_user: Optional[UUID4] = None
     id_lab: Optional[UUID4] = None
+    nome_lab: Optional[UUID4] = None
     id_project: Optional[UUID4] = None
+    nome_project: Optional[UUID4] = None
     ativo: Optional[bool] = None
     data_create: Optional[str] = None
     data_atualizacao: Optional[str] = None
