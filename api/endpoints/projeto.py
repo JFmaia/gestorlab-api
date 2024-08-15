@@ -32,7 +32,7 @@ async def post_projeto(
         autor_id= usuario_logado.id,
         titulo = projeto.titulo,
         descricao= projeto.descricao,
-        lab_creator= projeto.labCreator,
+        laboratorio_id= projeto.laboratorio_id,
         image= image_process
     )
 
