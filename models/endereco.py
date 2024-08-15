@@ -1,5 +1,6 @@
 from core.config import settings
 from datetime import datetime
+from sqlalchemy.orm import relationship
 from sqlalchemy import String, Column, Integer
 from sqlalchemy_utils import UUIDType
 import uuid
@@ -17,6 +18,7 @@ class Endereco(settings.DBBaseModel):
   pais = Column(String(256), nullable=True)
   data_inicial = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
   data_up = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)
+  laboratorio = relationship('Laboratorio', back_populates='endereco')
 
 
 

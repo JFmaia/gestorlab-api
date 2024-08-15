@@ -4,7 +4,7 @@ from sqlalchemy import String, Column, ForeignKey, Integer, Text
 from sqlalchemy.orm import relationship
 from core.config import settings
 from sqlalchemy_utils import UUIDType
-from models.associetions import usuario_laboratorio_association, laboratorio_projeto_association, laboratorio_permission_association, laboratorio_pending_association
+from models.associetions import usuario_laboratorio_association
 
 class Laboratorio(settings.DBBaseModel):
     __tablename__ = 'laboratorios'
@@ -23,24 +23,13 @@ class Laboratorio(settings.DBBaseModel):
         "Usuario",
         secondary=usuario_laboratorio_association,
         back_populates="laboratorios",
-        lazy="joined"
     )
     projetos = relationship(
         "Projeto",
-        secondary=laboratorio_projeto_association,
-        back_populates="laboratorios",
-        lazy="joined"
+        back_populates="laboratorio",
     )
-    lista_perm = relationship(
-        "PermissaoLaboratorio",
-        secondary=laboratorio_permission_association,
-        lazy="joined"
-    )
-    lista_acess = relationship(
-        "Pending",
-        secondary=laboratorio_pending_association,
-        lazy="joined"
-    )
+    permissoes=relationship('PermissaoLab', back_populates='laboratorio')
+    pedidos = relationship('Pending', back_populates='laboratorio')
     template = Column(Integer, nullable=False)
     endereco_id = Column(UUIDType(binary=False), ForeignKey("enderecos.id"), nullable=True) 
-    endereco = relationship("Endereco", lazy='joined')
+    endereco = relationship("Endereco", back_populates='laboratorio')
