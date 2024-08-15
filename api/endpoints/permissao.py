@@ -5,7 +5,7 @@ from sqlalchemy.future import  select
 from sqlalchemy.orm import Session
 
 from models.permissao import Permissao
-from models.permissaoLab import PermissaoOfLab
+from models.permissaoOfLab import PermissaoOfLab
 
 from schemas.permissao_schema import PermissaoSchema
 
