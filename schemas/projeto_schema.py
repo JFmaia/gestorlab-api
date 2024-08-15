@@ -39,7 +39,7 @@ class LaboratorioProjeto(BaseModel):
     data_inicial: Optional[datetime] = None 
     data_up: Optional[datetime] = None
     endereco_id: Optional[UUID4] = None
-    coordenador:  Optional[User]= None
+    coordenador: User
     endereco: Optional[LaboratorioEndereco]= None
     image: Optional[str] = None
 

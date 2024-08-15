@@ -75,7 +75,7 @@ class LaboratorioSchema(BaseModel):
     pedidos: Optional[List[PendingSchema]] = None
     endereco_id: Optional[UUID4] = None 
     endereco: Optional[EnderecoSchema]= None
-    coordenador: Optional[List[Member]] = None
+    coordenador: Member
     image: Optional[str] = None
 
     class Config:
