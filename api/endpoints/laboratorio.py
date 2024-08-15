@@ -10,9 +10,9 @@ from models.associetions import usuario_laboratorio_association
 from models.laboratorio import Laboratorio
 from models.usuario import Usuario
 from models.permissao import Permissao
-from models.permissaoLab import PermissaoOfLab
+from models.permissaoOfLab import PermissaoOfLab
 from models.pending import Pending
-from models.permissao_lab import PermissaoLaboratorio
+from models.permissaoLab import PermissaoLab
 from models.endereco import Endereco
 
 from core.deps import get_session, get_current_user, process_image
@@ -36,10 +36,6 @@ def post_laboratorio(
     query = select(Usuario).filter(Usuario.id == usuario_logado.id)
     result = db.execute(query)
     usuario_coord: Usuario= result.scalars().unique().one_or_none()
-
-    queryPerm = select(PermissaoOfLab).filter(PermissaoOfLab.title == 'Coordenador')
-    result = db.execute(queryPerm)
-    permition_coord: PermissaoOfLab = result.scalars().unique().one_or_none()
 
     processed_image = None
     if laboratorio.image:
@@ -79,15 +75,20 @@ def post_laboratorio(
     result = db.execute(queryLab)
     laboratorio: Laboratorio = result.scalars().unique().one_or_none()
 
-    permissao_laboratorio = PermissaoLaboratorio(
+    queryPerm = select(PermissaoOfLab).filter(PermissaoOfLab.title == 'Coordenador')
+    result = db.execute(queryPerm)
+    permition_coord: PermissaoOfLab = result.scalars().unique().one_or_none()
+
+    if permition_coord is None: 
+        raise HTTPException(detail="Permissão não encontrada!", status_code=status.HTTP_404_NOT_FOUND)
+    
+    permissao_laboratorio = PermissaoLab(
         id_user= usuario_logado.id,
         id_lab= laboratorio.id,
-        perm_id= permition_coord.id 
+        id_perm= permition_coord.id
     )
 
-    laboratorio.lista_perm.append(permissao_laboratorio)
-    db.add(laboratorio)
-    db.commit() 
+    db.add(permissao_laboratorio)
 
     usuario_coord.primeiro_acesso = False
     db.commit()
@@ -154,15 +155,20 @@ def delete_laboratorio(laboratorio_id: str, db: Session = Depends(get_session), 
         laboratorio_del: Laboratorio = result.scalars().unique().one_or_none()
 
         if laboratorio_del:
-            if usuario_logado.id == laboratorio_del.coordenador_id:        
-                db.delete(laboratorio_del)
-                db.commit()
-                return Response(status_code=status.HTTP_204_NO_CONTENT)
-            else:
-                raise HTTPException(detail="Você não pode deletar este laboratório!!", status_code=status.HTTP_401_UNAUTHORIZED)
-        
+            delete_stmt = usuario_laboratorio_association.delete().where(
+                usuario_laboratorio_association.c.laboratorio_id == laboratorio_del.id
+            )
+            db.execute(delete_stmt)
+            db.commit()
+            db.delete(laboratorio_del)
+            db.commit()
+                
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
         else:
-            raise HTTPException(detail="Laboratorio não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+            raise HTTPException(detail="Você não pode deletar este laboratório!!", status_code=status.HTTP_401_UNAUTHORIZED)
+        
+    else:
+        raise HTTPException(detail="Laboratório não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
 
 ############################### End Points de membros do laboratorio #############################
@@ -190,9 +196,21 @@ def post_member(user: LaboratorioSchemaAddMember , db:Session = Depends(get_sess
             if usuario in laboratorio.membros:
                 raise HTTPException(detail="Este usuário já é membro desse laboratorio!", status_code=status.HTTP_400_BAD_REQUEST)
             else:
-                laboratorio.membros.append(usuario)
+                queryPerm = select(PermissaoOfLab).filter(PermissaoOfLab.id == user.perm_id)
+                result = db.execute(queryPerm)
+                permition_coord: PermissaoOfLab = result.scalars().unique().one_or_none()
 
-                db.add(laboratorio)
+                if permition_coord is None: 
+                    raise HTTPException(detail="Permissão não encontrada!", status_code=status.HTTP_404_NOT_FOUND)
+
+                permissao_laboratorio = PermissaoLab(
+                    id_user= usuario_logado.id,
+                    id_lab= laboratorio.id,
+                    id_perm= permition_coord.id
+                )
+
+                laboratorio.membros.append(usuario)
+                db.add(permissao_laboratorio)
                 db.commit()
                 return {"detail": "Membro adicionado com sucesso com sucesso!"}
 
@@ -200,8 +218,8 @@ def post_member(user: LaboratorioSchemaAddMember , db:Session = Depends(get_sess
 
 @router.delete('/removeMember/{laboratorio_id}/{member_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_member_laboratory(
-    laboratorio_id: str, 
-    member_id: str, 
+    laboratorio_id: uuid.UUID, 
+    member_id: uuid.UUID,
     db:Session = Depends(get_session), 
     usuario_logado: Usuario = Depends(get_current_user)
 ):
@@ -213,10 +231,9 @@ def delete_member_laboratory(
         if laboratorio is None:
             raise HTTPException(detail="Laboratório não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
         
-        member_uuid = uuid.UUID(member_id)
         member_to_remove = None
         for member in laboratorio.membros:
-            if member.id == member_uuid:
+            if member.id == member_id:
                 member_to_remove = member
                 break
         
@@ -224,7 +241,7 @@ def delete_member_laboratory(
             # Remover membro diretamente da tabela de associação
             delete_stmt = usuario_laboratorio_association.delete().where(
                 usuario_laboratorio_association.c.laboratorio_id == laboratorio_id,
-                usuario_laboratorio_association.c.usuario_id == member_uuid
+                usuario_laboratorio_association.c.usuario_id == member_id
             )
             db.execute(delete_stmt)
             db.commit()
@@ -233,43 +250,6 @@ def delete_member_laboratory(
         
 
 ############################### End Points de permissão do laboratorio #############################
-
-@router.post("/addPerm", response_model=PermissaoLaboratorioResponse)
-def create_permissao_laboratorio(
-    permissao_laboratorio: PermissaoLaboratorioCreate,
-    db:Session = Depends(get_session)
-):
-    # Verifica se a permissão existe
-    query = select(PermissaoOfLab).filter(PermissaoOfLab.id == permissao_laboratorio.perm_id)
-    result = db.execute(query)
-    db_permissao: PermissaoOfLab = result.scalars().unique().one_or_none()
-    if db_permissao is None:
-        raise HTTPException(status_code=404, detail="Permissão encontrada")
-
-    # Verifica se o laboratório existe
-    query = select(Laboratorio).filter(Laboratorio.id == permissao_laboratorio.id_lab)
-    result = db.execute(query)
-    db_laboratorio: Laboratorio = result.scalars().unique().one_or_none()
-    if db_laboratorio is None:
-        raise HTTPException(status_code=404, detail="Laboratorio não encontrado")
-    
-    # Verifica se já existe uma permissão de laboratório para o usuário e laboratório
-    for perm in db_laboratorio.lista_perm:
-        if perm.id_user == permissao_laboratorio.id_user:
-            raise HTTPException(status_code=400, detail="Esse usuário já tem permissão no laboratório!")
-    
-    # Cria a nova permissão de laboratório
-    db_permissao_laboratorio = PermissaoLaboratorio(
-        id_user=permissao_laboratorio.id_user,
-        id_lab=permissao_laboratorio.id_lab,
-        perm_id=permissao_laboratorio.perm_id
-    )
-    db_laboratorio.lista_perm.append(db_permissao_laboratorio)
-    db.add(db_laboratorio)
-    db.commit() 
-    return db_permissao_laboratorio
-
-
 ## Upgrade permission laboratorio
 @router.post('/upPermission', response_model=LaboratorioSchema, status_code=status.HTTP_202_ACCEPTED)
 def update_perm(
@@ -294,8 +274,6 @@ def update_perm(
     for perm in laboratorio_up.lista_perm:
         if perm.id == value.id:
             perm.perm_id = value.perm_id
-    
-    db.add(laboratorio_up)
     db.commit()
     return laboratorio_up
 
@@ -335,3 +313,30 @@ def post_invitation(
     usuario.lista_pending.append(novo_pedido)
     db.add(usuario)
     db.commit()
+
+
+##################### List acess ############################
+
+#POST Aceitar user
+@router.put('/deactivePending/{peding_id}/{lab_id}', status_code=status.HTTP_200_OK)
+async def deactive_pending(
+    idPend: str,
+    idLab: str,
+    usuario_logado: Usuario = Depends(get_current_user), 
+    db: Session = Depends(get_session)
+):
+    query = select(Laboratorio).filter(Laboratorio.id == idLab)
+    result = db.execute(query)
+    laboratorio: Laboratorio = result.scalars().unique().one_or_none()
+
+    if laboratorio is None:
+        raise HTTPException(detail="Nenhuma laboratório encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+
+    for acess in laboratorio.lista_acess:
+        if acess.id == idPend:
+            acess.ativo = False
+            db.commit()
+        else:
+            raise HTTPException(detail="Nenhuma pedido de acesso encontrado!", status_code=status.HTTP_404_NOT_FOUND)
+    
+    
