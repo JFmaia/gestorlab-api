@@ -111,21 +111,14 @@ async def get_logado(usuario_logado: Usuario = Depends(get_current_user)):
 #POST Signup
 @router.post('/signup', status_code=status.HTTP_201_CREATED, response_model=UsuarioSchemaBase)
 async def post_usuario(usuario: UsuarioSchemaCreate, db: Session = Depends(get_session)):
-    query = select(Genero).filter(Genero.id == usuario.genero)
-    result = db.execute(query)
-    genero: Genero = result.scalars().unique().one_or_none()
-
-    if genero is None:
-        raise HTTPException(detail="Genero não encontrado", status_code=status.HTTP_404_NOT_FOUND)
-
     # Verificar se a matrícula já existe
     query = select(Usuario).filter(Usuario.matricula == usuario.matricula)
     result = db.execute(query)
     matricula_existente = result.scalars().unique().one_or_none()
+
     if matricula_existente:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Matrícula já existe")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Já existe um usuário com essa matricula!")
     
-     # Processar a imagem se ela não for nula
     processed_image = None
     if usuario.image:
         processed_image = process_image(usuario.image)
@@ -133,21 +126,20 @@ async def post_usuario(usuario: UsuarioSchemaCreate, db: Session = Depends(get_s
     novo_usuario: Usuario = Usuario(
         senha=gerar_hash_senha(usuario.senha),
         primeiro_nome=usuario.primeiro_nome,
+        segundo_nome=usuario.segundo_nome,
+        image=processed_image,
         primeiro_acesso=True,
         ativo=False,
-        image=processed_image,
-        segundo_nome=usuario.segundo_nome,
         data_nascimento=usuario.data_nascimento,
         email=usuario.email,
-        genero=genero.id,
         matricula=usuario.matricula,
         tel=usuario.tel,
+        id_genero=usuario.id_genero,
     )
 
     try:
         db.add(novo_usuario)
         db.commit()
-        db.refresh(novo_usuario)
 
         return novo_usuario
     except IntegrityError as e:
@@ -177,7 +169,6 @@ async def get_usuario(usuario_id: str, db: Session= Depends(get_session)):
 @router.put('/{usuario_id}', response_model=UsuarioSchemaBase, status_code=status.HTTP_202_ACCEPTED)
 async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db: Session =Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
     if usuario_logado:
-        list_aux: List[Permissao] = []
         query= select(Usuario).filter(Usuario.id == usuario_id)
         result= db.execute(query)
         usuario_up: UsuarioSchemaBase = result.scalars().unique().one_or_none()
@@ -197,27 +188,10 @@ async def put_usuario(usuario_id: str, usuario: UsuarioSchemaUp, db: Session =De
                 usuario_up.image = process_image(usuario.image)
             if usuario.data_nascimento:
                 usuario_up.data_nascimento = usuario.data_nascimento
-            if usuario.genero:
-                query = select(Genero).filter(Genero.id == usuario.genero)
-                result = db.execute(query)
-                genero: Genero = result.scalars().unique().one_or_none()
-                
-                if genero is None:
-                    raise HTTPException(detail="Genero não encontrado", status_code=status.HTTP_404_NOT_FOUND)
-                else:
-                    usuario_up.genero = genero.id
-            if usuario.list_permissoes:
-                query= select(Permissao)
-                result= db.execute(query)
-                permissoes: List[Permissao] = result.scalars().unique().all()
-
-                for item in usuario.list_permissoes:
-                    for permissao in permissoes:
-                        if item == permissao.id:
-                            list_aux.append(permissao)
-
-                usuario_up.permissoes.clear()
-                usuario_up.permissoes = list_aux
+            if usuario.id_genero:
+                usuario_up.id_genero= usuario.id_genero
+            if usuario.id_perm:
+                usuario_up.id_perm = usuario.id_perm
             if usuario.tel:
                 usuario_up.tel = usuario.tel
 
@@ -249,21 +223,12 @@ async def delete_usuario(usuario_id: str, db: Session = Depends(get_session), us
         result_usuario = db.execute(query_usuario)
         usuario_del: Usuario = result_usuario.scalars().unique().one_or_none()
 
-        if usuario_del:
-            query = select(Pending).filter(Pending.id_user == usuario_del.id)
-            result = db.execute(query)
-            peding: Pending = result.scalars().unique().one_or_none()
-            
-            # Verifica se existe uma instância de Pending antes de deletar
-            if peding:
-                db.delete(peding)
-                
+        if usuario_del is None:
+            raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
+        else:
             db.delete(usuario_del)
             db.commit()
-
             return Response(status_code=status.HTTP_204_NO_CONTENT)
-        else:
-            raise HTTPException(detail='Usuário não encontrado.', status_code=status.HTTP_404_NOT_FOUND)
 
 #POST Login
 @router.post('/login')
@@ -288,45 +253,17 @@ async def post_pending_laboratory(
     result = db.execute(query)
     laboratorio: Laboratorio = result.scalars().unique().one_or_none()
 
-    query = select(Usuario).filter(Usuario.id == pending.id_user)
-    result = db.execute(query)
-    usuario: Usuario = result.scalars().unique().one_or_none()
-
     if laboratorio is None:
         raise HTTPException(detail="Laboratório não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
     
-    if usuario is None:
-        raise HTTPException(detail="Usuário não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
-    
-    for item in laboratorio.lista_acess:
+    for item in laboratorio.pedidos:
         if item.id_user == pending.id_user:
             raise HTTPException(detail="Já existe um pedido seu nesse laboratório", status_code=status.HTTP_406_NOT_ACCEPTABLE)
 
     novo_pedido: Pending = Pending(
         id_user= pending.id_user,
-        nome_user = usuario.primeiro_nome + ' ' + usuario.segundo_nome,
         id_lab= pending.id_lab
     )
 
-    laboratorio.lista_acess.append(novo_pedido)
-    db.add(laboratorio)
+    db.add(novo_pedido)
     db.commit()
-
-@router.delete('/deletePending/{usuario_id}/{id_peding}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_usuario(usuario_id: str, id_peding: str, db: Session = Depends(get_session), usuario_logado: Usuario = Depends(get_current_user)):
-    query = select(Usuario).filter(Usuario.id == usuario_id)
-    result = db.execute(query)
-    usuario: Usuario = result.scalars().unique().one_or_none()
-
-    if usuario is None:
-        raise HTTPException(detail="Usuário não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
-    
-    # Percorre a lista de pendências e remove o item com o id correspondente
-    for index, item in enumerate(usuario.lista_pending):
-        if item.id == uuid.UUID(id_peding):
-            del usuario.lista_pending[index]
-            db.add(usuario)
-            db.commit()
-            return
-
-    raise HTTPException(detail="Pendência não encontrada!", status_code=status.HTTP_404_NOT_FOUND)
