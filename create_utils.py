@@ -1,6 +1,6 @@
 from core.database import Session
 from models.permissao import Permissao
-from models.permissaoLab import PermissaoOfLab
+from models.permissaoOfLab import PermissaoOfLab
 from models.genero import Genero
 from core.security import gerar_hash_senha
 from sqlalchemy.future import select
@@ -95,8 +95,8 @@ def create_user_admin():
         segundo_nome="Admin",
         data_nascimento="00/00/0000",
         email=EMAIL_USER,
-        permissoes=[permission],
-        genero=genero.id,
+        id_perm= permission.id,
+        id_genero=genero.id,
         matricula=0000000000,
         tel=00000000000,
     )
