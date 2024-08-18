@@ -60,6 +60,18 @@ class PermissaoLaboratorioUp(BaseModel):
     id: UUID4
     id_lab: UUID4
     perm_id: UUID4
+
+class Projeto(BaseModel):
+    id: Optional[UUID4] = None 
+    titulo: str
+    descricao: str
+    laboratorio_id: Optional[UUID4] = None 
+    image: Optional[str] = None
+    autor_id: Optional[UUID4] = None 
+    data_inicial: datetime
+    data_up: datetime
+    membros: Optional[List[Member]] = None
+
 class LaboratorioSchema(BaseModel):
     id: Optional[UUID4] = None 
     coordenador_id: Optional[UUID4] = None 
@@ -76,6 +88,7 @@ class LaboratorioSchema(BaseModel):
     endereco_id: Optional[UUID4] = None 
     endereco: Optional[EnderecoSchema]= None
     coordenador: Member
+    projetos: Optional[List[Projeto]]= None
     image: Optional[str] = None
 
     class Config:
