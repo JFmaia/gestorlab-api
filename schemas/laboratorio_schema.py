@@ -1,42 +1,35 @@
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr, UUID4
 from datetime import datetime
-from .usuario_schema import UsuarioSchemaBase
-from .projeto_schema import ProjetoSchema
-from .pending_schema import PendingSchema
-from .endereco_schema import EnderecoSchema
-
+from schemas.pending_schema import PendingSchema
+from schemas.endereco_schema import EnderecoSchema
+from schemas.permissaoLab_schema import PermissaoSchema
 class PermissaoLaboratorioResponse(BaseModel):
-    id: UUID4
-    id_user: UUID4
-    id_lab: UUID4
-    perm_id: UUID4
+    id_lab: Optional[UUID4] = None 
+    id: Optional[UUID4] = None 
+    id_user: Optional[UUID4] = None 
+    id_perm: Optional[UUID4] = None 
+    permissao: Optional[PermissaoSchema] = None
 
 class PermissaoLaboratorioCreate(BaseModel):
     id_user: UUID4
     id_lab: UUID4
     perm_id: UUID4
 
-class LaboratorioSchema(BaseModel):
+class Member(BaseModel):
     id: Optional[UUID4] = None 
-    coordenador_id: Optional[UUID4] = None 
-    nome: str
-    sobre: str
-    template: int
-    descricao: str
-    image: Optional[str] = None
+    data_inicial: Optional[str] = None
+    data_atualizacao: Optional[str] = None
+    primeiro_acesso: Optional[bool] = None
+    ativo: Optional[bool] = None
+    primeiro_nome: str
+    segundo_nome: str
+    data_nascimento: str
     email: EmailStr
-    data_inicial: Optional[datetime] = None 
-    data_up: Optional[datetime] = None
-    membros: Optional[List[UsuarioSchemaBase]] = None
-    projetos: Optional[List[ProjetoSchema]] = None
-    lista_perm: Optional[List[PermissaoLaboratorioResponse]] = None
-    lista_acess: Optional[List[PendingSchema]] = None
-    endereco_id: Optional[UUID4] = None 
-    endereco: Optional[EnderecoSchema]=None
-
-    class Config:
-        from_attributes = True
+    matricula: int
+    tel: int
+    id_genero: Optional[UUID4] = None 
+    image: Optional[str] = None
 
 class LaboratorioSchemaCreate(BaseModel):
     nome: str
@@ -56,8 +49,9 @@ class LaboratorioSchemaUp(BaseModel):
     image: Optional[str] = None
 
 class LaboratorioSchemaAddMember(BaseModel):
-    idLaboratorio: str
-    idUser: str
+    idLaboratorio: UUID4
+    idUser: UUID4
+    perm_id: UUID4
 
 class LaboratorioSchemaAddProjeto(BaseModel):
     id_projeto: str
@@ -66,3 +60,36 @@ class PermissaoLaboratorioUp(BaseModel):
     id: UUID4
     id_lab: UUID4
     perm_id: UUID4
+
+class Projeto(BaseModel):
+    id: Optional[UUID4] = None 
+    titulo: str
+    descricao: str
+    laboratorio_id: Optional[UUID4] = None 
+    image: Optional[str] = None
+    autor_id: Optional[UUID4] = None 
+    data_inicial: datetime
+    data_up: datetime
+    membros: Optional[List[Member]] = None
+
+class LaboratorioSchema(BaseModel):
+    id: Optional[UUID4] = None 
+    coordenador_id: Optional[UUID4] = None 
+    nome: str
+    sobre: str
+    template: int
+    descricao: str
+    email: EmailStr
+    data_inicial: Optional[datetime] = None 
+    data_up: Optional[datetime] = None
+    membros: Optional[List[Member]] = None
+    permissoes: Optional[List[PermissaoLaboratorioResponse]] = None
+    pedidos: Optional[List[PendingSchema]] = None
+    endereco_id: Optional[UUID4] = None 
+    endereco: Optional[EnderecoSchema]= None
+    coordenador: Member
+    projetos: Optional[List[Projeto]]= None
+    image: Optional[str] = None
+
+    class Config:
+        from_attributes = True
