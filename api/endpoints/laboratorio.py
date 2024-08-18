@@ -271,7 +271,7 @@ def update_perm(
         raise HTTPException(status_code=404, detail="Laboratorio não encontrado")
     
     # Verifica se já existe uma permissão de laboratório para o usuário e laboratório
-    for perm in laboratorio_up.lista_perm:
+    for perm in laboratorio_up.permissoes:
         if perm.id == value.id:
             perm.perm_id = value.perm_id
     db.commit()
