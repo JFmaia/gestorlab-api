@@ -1,8 +1,9 @@
 from typing import Optional
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, ConfigDict
 class GeneroSchema(BaseModel):
     id: Optional[UUID4] = None
     title: Optional[str]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )

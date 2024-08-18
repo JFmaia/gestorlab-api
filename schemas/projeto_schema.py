@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, UUID4, EmailStr
+from pydantic import BaseModel, UUID4, EmailStr, ConfigDict
 from datetime import datetime
 class User(BaseModel):
     id: Optional[UUID4] = None 
@@ -69,5 +69,6 @@ class ProjetoSchema(BaseModel):
     membros: Optional[List[User]] = None
     laboratorio: Optional[LaboratorioProjeto] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )
