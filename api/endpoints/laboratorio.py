@@ -317,26 +317,24 @@ def post_invitation(
 
 ##################### List acess ############################
 
-#POST Aceitar user
-@router.put('/deactivePending/{peding_id}/{lab_id}', status_code=status.HTTP_200_OK)
+#POST deativar pedido
+@router.post('/deactivePending/{peding_id}/{lab_id}', status_code=status.HTTP_200_OK)
 async def deactive_pending(
-    idPend: str,
-    idLab: str,
+    peding_id: uuid.UUID,
+    lab_id: uuid.UUID,
     usuario_logado: Usuario = Depends(get_current_user), 
     db: Session = Depends(get_session)
 ):
-    query = select(Laboratorio).filter(Laboratorio.id == idLab)
+    query = select(Laboratorio).filter(Laboratorio.id == lab_id)
     result = db.execute(query)
     laboratorio: Laboratorio = result.scalars().unique().one_or_none()
 
     if laboratorio is None:
         raise HTTPException(detail="Nenhuma laboratório encontrado!", status_code=status.HTTP_404_NOT_FOUND)
 
-    for acess in laboratorio.lista_acess:
-        if acess.id == idPend:
+    for acess in laboratorio.pedidos:
+        if acess.id == peding_id:
             acess.ativo = False
             db.commit()
         else:
             raise HTTPException(detail="Nenhuma pedido de acesso encontrado!", status_code=status.HTTP_404_NOT_FOUND)
-    
-    
