@@ -6,7 +6,6 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import Session
 
 from models.pending import Pending
-from models.permissao import Permissao
 from models.usuario import Usuario
 
 from core.deps import get_session, get_current_user
