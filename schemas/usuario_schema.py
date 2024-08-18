@@ -30,6 +30,17 @@ class LaboratorioEndereco(BaseModel):
     pais:str
     data_inicial:Optional[datetime] = None
     data_up:Optional[datetime] = None
+
+class Projeto(BaseModel):
+    id: Optional[UUID4] = None 
+    titulo: str
+    descricao: str
+    laboratorio_id: Optional[UUID4] = None 
+    image: Optional[str] = None
+    autor_id: Optional[UUID4] = None 
+    data_inicial: datetime
+    data_up: datetime
+    membros: Optional[List[User]] = None
 class Laboratorio(BaseModel):
     id: Optional[UUID4] = None 
     coordenador_id: Optional[UUID4] = None 
@@ -44,6 +55,7 @@ class Laboratorio(BaseModel):
     coordenador: User
     endereco: Optional[LaboratorioEndereco]= None
     image: Optional[str] = None
+    projetos: Optional[List[Projeto]] = None
 
 class UsuarioSchemaBase(BaseModel):
     id: Optional[UUID4] = None 
@@ -63,6 +75,7 @@ class UsuarioSchemaBase(BaseModel):
     permissao: Optional[PermissaoSchema] = None
     pedidos: Optional[List[PendingSchema]] = None
     laboratorios: Optional[List[Laboratorio]] = None
+    projetos: Optional[List[Projeto]] = None
     image: Optional[str] = None
     class Config:
         from_attributes = True
