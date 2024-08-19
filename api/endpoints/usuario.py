@@ -104,7 +104,7 @@ async def password_recovery(emailRecovery: RecoveryPassword, db: Session = Depen
 
 
 # GET Logado
-@router.get('/logado', response_model= UsuarioSchemaBase)
+@router.get('/logado', response_model= UsuarioSchemaBase, status_code=status.HTTP_200_OK)
 async def get_logado(usuario_logado: Usuario = Depends(get_current_user)):
     return usuario_logado
 

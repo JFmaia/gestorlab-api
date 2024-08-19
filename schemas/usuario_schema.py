@@ -1,5 +1,5 @@
 from typing import Optional, List 
-from pydantic import BaseModel, EmailStr, UUID4
+from pydantic import BaseModel, EmailStr, UUID4, ConfigDict
 from schemas.permissao_schema import PermissaoSchema
 from schemas.genero_schema import GeneroSchema
 from schemas.pending_schema import PendingSchema
@@ -77,8 +77,10 @@ class UsuarioSchemaBase(BaseModel):
     laboratorios: Optional[List[Laboratorio]] = None
     projetos: Optional[List[Projeto]] = None
     image: Optional[str] = None
-    class Config:
-        from_attributes = True
+    
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 from schemas.laboratorio_schema import LaboratorioSchema
 from schemas.projeto_schema import ProjetoSchema

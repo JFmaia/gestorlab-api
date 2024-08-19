@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, ConfigDict
 
 class EnderecoSchema(BaseModel):
   id: Optional[UUID4] = None
@@ -15,5 +15,6 @@ class EnderecoSchema(BaseModel):
   data_inicial:Optional[datetime] = None
   data_up:Optional[datetime] = None
 
-  class Config:
-    from_attributes = True
+  model_config = ConfigDict(
+    from_attributes=True
+  )

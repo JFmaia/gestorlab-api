@@ -12,7 +12,7 @@ class Projeto(settings.DBBaseModel):
     titulo = Column(String(256), unique=True, nullable=False)
     image =  Column(Text, nullable=True)
     descricao = Column(String(5000), nullable=True)
-    laboratorio_id= Column(UUIDType(binary=False), ForeignKey("laboratorios.id"), nullable=False)
+    laboratorio_id= Column(UUIDType(binary=False), ForeignKey("laboratorios.id"), nullable=True)
     laboratorio = relationship('Laboratorio', back_populates='projetos')
     autor_id = Column(UUIDType(binary=False), ForeignKey("usuario.id"), nullable=False)
     data_inicial = Column(String(256), default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'), nullable=False)

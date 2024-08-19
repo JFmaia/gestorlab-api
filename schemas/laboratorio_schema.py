@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, UUID4
+from pydantic import BaseModel, EmailStr, UUID4, ConfigDict
 from datetime import datetime
 from schemas.pending_schema import PendingSchema
 from schemas.endereco_schema import EnderecoSchema
@@ -91,5 +91,6 @@ class LaboratorioSchema(BaseModel):
     projetos: Optional[List[Projeto]]= None
     image: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )
