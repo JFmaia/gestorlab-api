@@ -9,9 +9,6 @@ COPY . .
 
 RUN pip install python-dotenv
 
-COPY .env .env
-ENV PYTHONUNBUFFERED=1  
-RUN bash -c "source .env"
 
 COPY run.sh run.sh
 RUN chmod +x run.sh
