@@ -28,6 +28,17 @@ class LaboratorioEndereco(BaseModel):
     data_inicial:Optional[datetime] = None
     data_up:Optional[datetime] = None
 
+class Permissao(BaseModel):
+    id: Optional[UUID4] = None 
+    title: str
+
+class PermissaoLab(BaseModel):
+    id_lab: Optional[UUID4] = None 
+    id: Optional[UUID4] = None 
+    id_user: Optional[UUID4] = None 
+    id_perm: Optional[UUID4] = None 
+    permissao: Optional[Permissao] = None
+
 class LaboratorioProjeto(BaseModel):
     id: Optional[UUID4] = None 
     coordenador_id: Optional[UUID4] = None 
@@ -40,6 +51,7 @@ class LaboratorioProjeto(BaseModel):
     data_up: Optional[datetime] = None
     endereco_id: Optional[UUID4] = None
     coordenador: User
+    permissoes: Optional[List[PermissaoLab]] = None
     endereco: Optional[LaboratorioEndereco]= None
     image: Optional[str] = None
 
