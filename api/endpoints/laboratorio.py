@@ -204,7 +204,7 @@ def post_member(user: LaboratorioSchemaAddMember , db:Session = Depends(get_sess
                     raise HTTPException(detail="Permissão não encontrada!", status_code=status.HTTP_404_NOT_FOUND)
 
                 permissao_laboratorio = PermissaoLab(
-                    id_user= usuario_logado.id,
+                    id_user= user.idUser,
                     id_lab= laboratorio.id,
                     id_perm= permition_coord.id
                 )
@@ -238,6 +238,7 @@ def delete_member_laboratory(
                 break
         
         if member_to_remove:
+            laboratorio.permissoes = [permissao for permissao in laboratorio.permissoes if permissao.id_user  != member_id]
             # Remover membro diretamente da tabela de associação
             delete_stmt = usuario_laboratorio_association.delete().where(
                 usuario_laboratorio_association.c.laboratorio_id == laboratorio_id,
