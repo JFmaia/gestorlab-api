@@ -210,7 +210,7 @@ def post_member(user: LaboratorioSchemaAddMember , db:Session = Depends(get_sess
                 )
 
                 laboratorio.membros.append(usuario)
-                db.add(permissao_laboratorio)
+                laboratorio.permissoes.append(permissao_laboratorio)
                 db.commit()
                 return {"detail": "Membro adicionado com sucesso com sucesso!"}
 
