@@ -256,7 +256,8 @@ async def post_pending_laboratory(
     if laboratorio is None:
         raise HTTPException(detail="Laboratório não encontrado!", status_code=status.HTTP_404_NOT_FOUND)
     
-    for item in laboratorio.pedidos:
+    # Filtra os pedidos ativos e verifica se já existe um pedido do usuário
+    for item in filter(lambda p: p.ativo, laboratorio.pedidos):
         if item.id_user == pending.id_user:
             raise HTTPException(detail="Já existe um pedido seu nesse laboratório", status_code=status.HTTP_406_NOT_ACCEPTABLE)
 

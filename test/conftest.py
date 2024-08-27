@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy import inspect
 from sqlalchemy.orm import sessionmaker
 from models.genero import Genero
 from models.permissao import Permissao
@@ -65,6 +66,11 @@ def db():
     settings.DBBaseModel.metadata.drop_all(bind=engine) 
     settings.DBBaseModel.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
+
+    # Aqui, adicione um teste ou log para verificar se a tabela foi criada
+    inspector = inspect(db.bind)
+    assert 'laboratorios' in inspector.get_table_names(), "Tabela 'laboratorios' não foi criada"
+
 
     # Criação de Gênero
     genero = Genero(title="Masculino")

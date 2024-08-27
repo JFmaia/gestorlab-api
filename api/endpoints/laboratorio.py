@@ -319,7 +319,7 @@ def post_invitation(
 ##################### List acess ############################
 
 #POST deativar pedido
-@router.post('/deactivePending/{peding_id}/{lab_id}', status_code=status.HTTP_200_OK)
+@router.put('/deactivePending/{peding_id}/{lab_id}', status_code=status.HTTP_200_OK)
 async def deactive_pending(
     peding_id: uuid.UUID,
     lab_id: uuid.UUID,
